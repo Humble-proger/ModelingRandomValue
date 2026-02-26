@@ -1,4 +1,4 @@
-#include "LogisticDistribution.h"
+#include "../include/LogisticDistribution.h"
 #define _USE_MATH_DEFINES
 using namespace std;
 

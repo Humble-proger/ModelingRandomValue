@@ -1,7 +1,7 @@
 #include <iostream> // Подключение библиотеки для ввода-вывода
 #include <vector>
-#include "LogisticDistribution.h"
-#include "UniformLogisticDistribution.h"
+#include "include/LogisticDistribution.h"
+#include "include/UniformLogisticDistribution.h"
 
 using namespace std;
 using namespace ModelingRandomValue::Distribution;

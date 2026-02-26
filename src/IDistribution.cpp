@@ -1,4 +1,4 @@
-#include "IDistribution.h"
+#include "../include/IDistribution.h"
 
 namespace ModelingRandomValue::Interfaces 
 {
