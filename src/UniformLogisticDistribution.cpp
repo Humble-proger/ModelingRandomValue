@@ -1,6 +1,5 @@
 #include "../include/UniformLogisticDistribution.h"
 #define _USE_MATH_DEFINES
-using namespace std;
 
 namespace ModelingRandomValue::Distribution {
     
@@ -30,7 +29,7 @@ namespace ModelingRandomValue::Distribution {
     ///        где u ~ Uniform(-1,1), y ~ Logistic(0,s)
     double UniformLogisticDistribution::random()
     {
-        double _u = _uniform(generator);
+        double _u = _uniform.random();
 
         double _y = _logistic.random();
 
@@ -81,7 +80,8 @@ namespace ModelingRandomValue::Distribution {
         {
             throw runtime_error("Некорректное значение параметра в файле");
         }
-        setScale(s);
+        _scale = s;
+        _logistic.setScale(s);
     }
 
     void UniformLogisticDistribution::setScale(double s) 

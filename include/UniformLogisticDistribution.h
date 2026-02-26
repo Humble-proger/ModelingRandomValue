@@ -1,8 +1,7 @@
 #pragma once
 #include "interfaces.h"
 #include "LogisticDistribution.h"
-#include <cmath>
-#include <stdexcept>
+#include "UniformDistribution.h"
 using namespace std;
 
 namespace ModelingRandomValue::Distribution
@@ -19,7 +18,7 @@ namespace ModelingRandomValue::Distribution
     {
     private:
         double _scale = 1.0;
-        uniform_real_distribution<double> _uniform;
+        UniformDistribution _uniform;
         LogisticDistribution _logistic;
 
     public:

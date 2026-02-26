@@ -1,8 +1,7 @@
 #pragma once
 #include "interfaces.h"
-#include <cmath>
-#include <iostream>
-#include <stdexcept>
+#include "UniformDistribution.h"
+using namespace std;
 
 namespace ModelingRandomValue::Distribution
 {
@@ -20,7 +19,7 @@ namespace ModelingRandomValue::Distribution
     private:
         double _loc = 0.0;
         double _scale = 1.0;
-        std::uniform_real_distribution<double> _uniform01;
+        UniformDistribution _uniform;
 
     public:
         /// @brief Конструктор

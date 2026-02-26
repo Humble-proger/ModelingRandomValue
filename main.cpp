@@ -2,61 +2,45 @@
 #include <vector>
 #include "include/LogisticDistribution.h"
 #include "include/UniformLogisticDistribution.h"
+#include "include/UniformDistribution.h"
+#include "include/NormalDistribution.h"
 
 using namespace std;
 using namespace ModelingRandomValue::Distribution;
 
-
-void demonstrateLogicDistribution(double loc = 0.0, double scale = 1.0) 
+template<typename Distribution>
+void demonstrateDistribution(const string& name, Distribution& dist) 
 {
-    cout << "=== Демонстрация логистического распределения ===" << endl;
-    
-    LogisticDistribution _logistic(loc, scale);
+    cout << "=== Демонстрация " << name << " ===" << endl;
     
     cout << "Теоретические характеристики:" << std::endl;
-    cout << "  Мат. ожидание: " << _logistic.mean() << endl;
-    cout << "  Дисперсия: " << _logistic.variance() << endl;
-    cout << "  Коэфф. эксцесса: " << _logistic.kurtosis() << endl;
-    
-    cout << "\nНесколько значений функции распределения:" << endl;
-    for (double x = -3.0 + loc; x <= 3.0 + loc; x += 1.0) {
-        cout << "  F(" << x << ") = " << _logistic.cdf(x) << endl;
-    }
-    
-    cout << "\nНесколько случайных чисел:" << endl;
-    for (int i = 0; i < 5; i++) {
-        cout << "  " << _logistic.random() << endl;
-    }
-    cout << endl;
-}
-
-void demonstrateUniformLogicDistribution(double scale = 1.0) 
-{
-    cout << "=== Демонстрация равномерного распределения, сглаженное логистическим ===" << endl;
-    
-    UniformLogisticDistribution _uniformLogistic(scale);
-    
-    cout << "Теоретические характеристики:" << std::endl;
-    cout << "  Мат. ожидание: " << _uniformLogistic.mean() << endl;
-    cout << "  Дисперсия: " << _uniformLogistic.variance() << endl;
-    cout << "  Коэфф. эксцесса: " << _uniformLogistic.kurtosis() << endl;
+    cout << "  Мат. ожидание: " << dist.mean() << endl;
+    cout << "  Дисперсия: " << dist.variance() << endl;
+    cout << "  Коэфф. асимметрии: " << dist.skewness() << endl;
+    cout << "  Коэфф. эксцесса: " << dist.kurtosis() << endl;
     
     cout << "\nНесколько значений функции плотности:" << endl;
-    for (double x = -3.0; x <= 3.0; x += 1.0) {
-        cout << "  F(" << x << ") = " << _uniformLogistic.density(x) << endl;
+    for (double x = -3.0 + dist.mean(); x <= 3.0 + dist.mean(); x += 1.0) {
+        cout << "  f(" << x << ") = " << dist.density(x) << endl;
     }
     
     cout << "\nНесколько случайных чисел:" << endl;
     for (int i = 0; i < 5; i++) {
-        cout << "  " << _uniformLogistic.random() << endl;
+        cout << "  " << dist.random() << endl;
     }
     cout << endl;
 }
 
 int main() {
     
-    demonstrateLogicDistribution(3.0, 2.0);
-    demonstrateUniformLogicDistribution();
+    UniformDistribution _uniform(1.0, 9.0);
+    NormalDistribution _normal(0.0, 1.0);
+    LogisticDistribution _logistic(0.0, 1.0);
+    UniformLogisticDistribution _uniformLogistic(1.0);
+    demonstrateDistribution("равномерного распределения", _uniform);
+    demonstrateDistribution("нормального распределения", _normal);
+    demonstrateDistribution("логистического распределения", _logistic);
+    demonstrateDistribution("равномерного распределения, сглаженным логистическим распределением", _uniformLogistic);
     
     return 0;
 }
