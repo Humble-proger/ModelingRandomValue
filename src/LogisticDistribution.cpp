@@ -7,7 +7,7 @@ namespace ModelingRandomValue::Distribution
     LogisticDistribution::LogisticDistribution(double loc, double s) 
     : _loc(loc)
     , _scale(s)
-    , _uniform01(0.0, 1.0) 
+    , _uniform(0.0, 1.0) 
     {
         if (s <= 0.0) {
             throw std::invalid_argument("Параметр масштаба должен быть положительным");
@@ -45,7 +45,7 @@ namespace ModelingRandomValue::Distribution
 
     double LogisticDistribution::random() 
     {
-        double _p = _uniform01(generator);
+        double _p = _uniform.random();
         _p = max(min(_p, 1.0 - 1e-10), 1e-10);
 
         return quantile(_p);
@@ -89,8 +89,8 @@ namespace ModelingRandomValue::Distribution
         {
             throw runtime_error("Некорректное значение масштаба в файле");
         }
-        setLocation(loc);
-        setScale(s);
+        _loc = loc;
+        _scale = s;
     }
 
     void LogisticDistribution::setScale(double s) 

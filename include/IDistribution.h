@@ -1,5 +1,7 @@
 #pragma once
 #include <random>
+#include <cmath>
+#include <stdexcept>
 
 #define interface struct
 
