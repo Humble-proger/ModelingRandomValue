@@ -4,6 +4,9 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
+#include <fstream>
+#include <iomanip>
+
 
 using namespace std;
 using namespace ModelingRandomValue::Data;
@@ -89,6 +92,10 @@ namespace ModelingRandomValue::Observers
         /// @param x аргумент
         /// @return Плотность в заданной точке (если x вне интервала, возвращается 0)
         double getEmpiricalDensity(double x) const;
+
+        /// @brief Получить границы всех столбцов
+        /// @return вектор пар (левая граница, правая граница) для каждого столбца
+        vector<pair<double, double>> getColBounds() const;
 #pragma endregion
 
 #pragma region Save

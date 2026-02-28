@@ -1,6 +1,4 @@
 #include "../include/Histogram.h"
-#include <fstream>
-#include <iomanip>
 
 namespace ModelingRandomValue::Observers
 {
@@ -158,6 +156,21 @@ namespace ModelingRandomValue::Observers
         return _densities;
     }
 
+    vector<pair<double, double>> Histogram::getColBounds() const {
+        if (_dirty) const_cast<Histogram*>(this)->recalculate();
+        
+        vector<pair<double, double>> _bounds;
+        _bounds.reserve(_numCols);
+        
+        for (int _i = 0; _i < _numCols; _i++) {
+            double _left = _minBound + _i * _colWidth;
+            double _right = (_i == _numCols - 1) ? _maxBound : _left + _colWidth;
+            _bounds.emplace_back(_left, _right);
+        }
+        
+        return _bounds;
+    }
+
     bool Histogram::isValid() const { return !_dirty; }
 
     void Histogram::refresh()
@@ -173,7 +186,7 @@ namespace ModelingRandomValue::Observers
             const_cast<Histogram *>(this)->recalculate();
         }
 
-        ofstream _file(fileBasenameNoExtension + ".csv");
+        ofstream _file("output/" + fileBasenameNoExtension + ".csv");
         if (!_file.is_open())
         {
             throw runtime_error("Невозможно открыть файл для записи: " + fileBasenameNoExtension + ".csv");
@@ -181,7 +194,7 @@ namespace ModelingRandomValue::Observers
 
         _file << fixed << setprecision(6);
 
-        _file << "x_left,x_right,x_center,empirical_density\n";
+        _file << "x_left,x_right,x_center,empirical_density" << endl;
 
         for (int _i = 0; _i < _numCols; _i++)
         {
@@ -189,9 +202,7 @@ namespace ModelingRandomValue::Observers
             double _right = (_i == _numCols - 1) ? _maxBound : _left + _colWidth;
             double _center = (_left + _right) / 2.0;
 
-            _file << _left << "," << _right << "," << _center << "," << _densities[_i] << "\n";
+            _file << _left << "," << _right << "," << _center << "," << _densities[_i] << endl;
         }
-
-        _file.close();
     }
 }
