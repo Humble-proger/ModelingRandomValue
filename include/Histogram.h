@@ -95,7 +95,7 @@ namespace ModelingRandomValue::Observers
 
         /// @brief Получить границы всех столбцов
         /// @return вектор пар (левая граница, правая граница) для каждого столбца
-        vector<pair<double, double>> getBinBounds() const;
+        vector<pair<double, double>> getColBounds() const;
 #pragma endregion
 
 #pragma region Save

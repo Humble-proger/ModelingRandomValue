@@ -10,29 +10,32 @@ namespace ModelingRandomValue::AdditionalFunc
 
     void printHeader(const string &title)
     {
+        cout << endl;
         printSeparator();
-        cout << " " << title << endl;
+        cout << title << endl;
         printSeparator();
     }
 
     void printSubHeader(const string &title)
     {
-        cout << "\n--- " << title << " ---" << endl;
+        cout << endl
+             << "--- " << title << " ---" << endl;
     }
 
     void printText(const string &text, size_t countSpace)
     {
-        cout << setw(countSpace) << text << endl;
+        cout << string(countSpace, ' ') << text << endl;
     }
 
     void printValue(const string &name, double value, size_t countSpace)
     {
-        cout << setw(countSpace) << name << ": " << value << endl;
+        cout << fixed << setprecision(6) << defaultfloat << noshowpoint;
+        cout << string(countSpace, ' ') << name << ": " << value << endl;
     }
 
     void printDataStatistic(DataSet &data)
     {
-        printText("Статистика выборки (n = " + to_string(data.size()) + "):", 0);
+        cout << "Статистика выборки (n = " << data.size() << "):";
 
         if (data.isEmpty())
         {
@@ -70,7 +73,7 @@ namespace ModelingRandomValue::AdditionalFunc
     void printHistStatistic(Histogram &hist, bool detail)
     {
         printValue("Количество столбцов", hist.getNumCols());
-        printText("Диапазон: [" + to_string(hist.getMinBound()) + ", " + to_string(hist.getMaxBound()) + "]");
+        cout << string(2, ' ') << "Диапазон: [" << setprecision(2) << hist.getMinBound() << ", " << hist.getMaxBound() << "]" << endl;
         printValue("Ширина столбца", hist.getColWidth());
 
         if (!detail)
@@ -78,13 +81,45 @@ namespace ModelingRandomValue::AdditionalFunc
             return;
         }
 
-        auto _bounds = hist.getBinBounds();
+        auto _bounds = hist.getColBounds();
         auto _densities = hist.getDensities();
+
+        cout << endl;
 
         for (int i = 0; i < hist.getNumCols(); i++)
         {
-            printText("Столбец " + to_string(i) + ": [" + to_string(_bounds[i].first) + ", " + to_string(_bounds[i].second) + "]");
+            cout << string(2, ' ') << "Столбец " << i << ": [" << _bounds[i].first << ", " << _bounds[i].second << "]" << endl;
             printValue("Плотность", _densities[i]);
+        }
+    }
+
+    void saveTheoreticalDensity(const string &fileBasenameNoExtension, IDistribution &dist, pair<double, double> bounds, size_t n)
+    {
+        if (bounds.first >= bounds.second)
+        {
+            throw invalid_argument("Правая граница меньше левой границы");
+        }
+
+        if (n < 2)
+        {
+            return;
+        }
+
+        double _step = (bounds.second - bounds.first) / (n - 1);
+
+        ofstream _file("output/" + fileBasenameNoExtension + ".csv");
+        if (!_file.is_open())
+        {
+            throw runtime_error("Невозможно открыть файл для записи: " + fileBasenameNoExtension + ".csv");
+        }
+
+        _file << fixed << setprecision(6);
+
+        _file << "x,theoretical_density" << endl;
+
+        for (double _elapsedX = bounds.first; _elapsedX < bounds.second; _elapsedX += _step)
+        {
+            _file << _elapsedX << "," << dist.density(_elapsedX) << endl;
         }
     }
 }

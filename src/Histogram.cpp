@@ -156,7 +156,7 @@ namespace ModelingRandomValue::Observers
         return _densities;
     }
 
-    vector<pair<double, double>> Histogram::getBinBounds() const {
+    vector<pair<double, double>> Histogram::getColBounds() const {
         if (_dirty) const_cast<Histogram*>(this)->recalculate();
         
         vector<pair<double, double>> _bounds;
@@ -186,7 +186,7 @@ namespace ModelingRandomValue::Observers
             const_cast<Histogram *>(this)->recalculate();
         }
 
-        ofstream _file(fileBasenameNoExtension + ".csv");
+        ofstream _file("output/" + fileBasenameNoExtension + ".csv");
         if (!_file.is_open())
         {
             throw runtime_error("Невозможно открыть файл для записи: " + fileBasenameNoExtension + ".csv");
@@ -204,7 +204,5 @@ namespace ModelingRandomValue::Observers
 
             _file << _left << "," << _right << "," << _center << "," << _densities[_i] << endl;
         }
-
-        _file.close();
     }
 }

@@ -49,11 +49,11 @@ namespace ModelingRandomValue::AdditionalFunc
         static_assert(is_base_of<IDistribution, Dist>::value, "Передаваемый класс не является распределением");
         printSubHeader(nameDist);
 
-        printValue("Плотность в x =" + to_string(x), dist.density(x));
+        cout << setw(2) << "Плотность в x =" << setprecision(1) << x << ": " << setprecision(6) << dist.density(x) << endl;
         printValue("Мат. ожидание", dist.mean());
         printValue("Дисперсия", dist.variance());
-        printValue("Коэфф. асимметрии", dist.skewness());
-        printValue("Коэфф. эксцесса", dist.kurtosis());
+        printValue("Коэф. асимметрии", dist.skewness());
+        printValue("Коэф. эксцесса", dist.kurtosis());
         printValue("Случайное число", dist.random());
     }
 
@@ -68,12 +68,16 @@ namespace ModelingRandomValue::AdditionalFunc
     /// @brief Распечатать строку таблицы
     /// @tparam Elem Тип, который можно перевести в строку
     /// @param list Список из пар (значение столбца, количество пробелов перед столбцом)
+    /// @note Данная функция поддерживает вывод только английскими символами, ввиду того, что символы кириллицы
+    ///       занимают 2 байта, вместо 1 байта. Если подавать символы с кириллицей функция не будет корректно
+    ///       выравнивать вывод в консоль. Для исправления этого, необходима отдельная реализация отслеживающая
+    ///       многобайтовые символы.
     template <typename Elem>
     void printStringTable(initializer_list<pair<Elem, size_t>> list)
     {
-        for (pair<Elem, size_t> _elem_list : list)
+        for (const auto &_elem_list : list)
         {
-            cout << setw(_elem_list.second) << _elem_list.first;
+            cout << left << setw(_elem_list.second) << defaultfloat << noshowpoint << _elem_list.first;
         }
         cout << endl;
     }
@@ -89,4 +93,11 @@ namespace ModelingRandomValue::AdditionalFunc
         chrono::duration<double, milli> elapsed = end - start;
         return elapsed.count();
     }
+
+    /// @brief Сохранить теоретическую выборку значений функции плотности
+    /// @param fileBasenameNoExtension имя файла без расширения
+    /// @param dist распределение
+    /// @param bounds пара границ (левая граница, правая граница)
+    /// @param n количество разбиений
+    void saveTheoreticalDensity(const string &fileBasenameNoExtension, IDistribution &dist, pair<double, double> bounds, size_t n = 500);
 }
