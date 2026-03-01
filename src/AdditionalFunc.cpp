@@ -35,7 +35,7 @@ namespace ModelingRandomValue::AdditionalFunc
 
     void printDataStatistic(DataSet &data)
     {
-        cout << "Статистика выборки (n = " << data.size() << "):";
+        cout << "Статистика выборки (n = " << data.size() << "):" << endl;
 
         if (data.isEmpty())
         {

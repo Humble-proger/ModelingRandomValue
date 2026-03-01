@@ -194,15 +194,14 @@ namespace ModelingRandomValue::Observers
 
         _file << fixed << setprecision(6);
 
-        _file << "x_left,x_right,x_center,empirical_density" << endl;
+        _file << "x_left,x_right,empirical_density" << endl;
 
         for (int _i = 0; _i < _numCols; _i++)
         {
             double _left = _minBound + _i * _colWidth;
             double _right = (_i == _numCols - 1) ? _maxBound : _left + _colWidth;
-            double _center = (_left + _right) / 2.0;
 
-            _file << _left << "," << _right << "," << _center << "," << _densities[_i] << endl;
+            _file << _left << "," << _right << "," << _densities[_i] << endl;
         }
     }
 }

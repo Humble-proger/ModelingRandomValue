@@ -99,13 +99,13 @@ namespace ModelingRandomValue::Demonstrate
     {
         printHeader("4. ДЕМОНСТРАЦИЯ КЛАССА Histogram");
 
-        NormalDistribution _normal(0.0, 1.0);
+        LogisticDistribution _logical(0.0, 1.0);
         DataSet _dataSet;
 
-        printSubHeader("Генерация 1000 значений из N(0,1)");
+        printSubHeader("Генерация 1000 значений из Logic(0,1)");
         for (int _i = 0; _i < 1000; _i++)
         {
-            _dataSet.add(_normal.random());
+            _dataSet.add(_logical.random());
         }
 
         Histogram _hist(_dataSet, 15);
@@ -119,7 +119,7 @@ namespace ModelingRandomValue::Demonstrate
         for (double _x : _testPoints)
         {
             cout << string(2, ' ') << "f(" << _x << "): " << _hist.getEmpiricalDensity(_x) << endl;
-            cout << string(2, ' ') << "f_теор(" << _x << "): " << _normal.density(_x) << endl << endl;
+            cout << string(2, ' ') << "f_теор(" << _x << "): " << _logical.density(_x) << endl << endl;
         }
 
         printSubHeader("Первые 5 столбцов гистограммы");
@@ -132,55 +132,30 @@ namespace ModelingRandomValue::Demonstrate
             printValue("Плотность", _densities[_i]);
         }
 
-        _hist.saveToFile("normal_histogram");
-        saveTheoreticalDensity("normal_theoretical_densities", _normal, { _hist.getMinBound(), _hist.getMaxBound() }, 100);
-        printText("\nДанные сохранены в normal_histogram.csv");
+        _hist.saveToFile("logical_histogram");
+        printText("\nДанные сохранены в logical_histogram.csv");
+        saveTheoreticalDensity("logical_theoretical_densities", _logical, { _hist.getMinBound(), _hist.getMaxBound() }, 100);
+        printText("Данные о теоретической плотности сохранены в logical_theoretical_densities.csv");
     }
 
     void demonstrateDensityComparison()
     {
         printHeader("5. СРАВНЕНИЕ ТЕОРЕТИЧЕСКОЙ И ЭМПИРИЧЕСКОЙ ПЛОТНОСТИ");
 
-        UniformLogisticDistribution _dist(1.0);
+        UniformLogisticDistribution _uniformLogical(1.0);
+        UniformDistribution _uniform(0.0, 1.0);
+        NormalDistribution _normal(0.0, 1.0);
 
-        vector<int> _sizes = {100, 1000, 10000};
+        vector<pair<size_t, size_t>> _sizes = {{100, 7}, {1000, 20}, {10000, 40}, {10000000, 100}};
 
-        for (int _n : _sizes)
-        {
-            printSubHeader("Объем выборки n = " + to_string(_n));
-
-            DataSet _dataSet;
-            for (int _i = 0; _i < _n; _i++)
-            {
-                _dataSet.add(_dist.random());
-            }
-
-            int _cols = static_cast<int>(1 + 3.322 * log10(_n));
-            Histogram _hist(_dataSet, _cols);
-
-            double _minVal = _dataSet.min();
-            double _maxVal = _dataSet.max();
-            double _step = (_maxVal - _minVal) / 100.0;
-
-            double _totalError = 0.0;
-            int _points = 0;
-
-            for (double _x = _minVal; _x <= _maxVal; _x += _step)
-            {
-                double _theoretical = _dist.density(_x);
-                double _empirical = _hist.getEmpiricalDensity(_x);
-                _totalError += abs(_theoretical - _empirical);
-                _points++;
-            }
-
-            double _meanError = _totalError / _points;
-            printValue("Среднее абсолютное отклонение", _meanError);
-
-            string _filename = "comparison_n" + to_string(_n);
-            _hist.saveToFile(_filename);
-            saveTheoreticalDensity(_filename + "_theoretical", _dist, { _hist.getMinBound(), _hist.getMaxBound() }, 100);
-            printText("Данные сохранены в " + _filename + ".csv");
-        }
+        printSubHeader("Сглаженное равномерное (вариант 13) s=1.0");
+        compareDensity("smooth", _uniformLogical, _sizes);
+        
+        printSubHeader("Нормальное распределение N(0,1)");
+        compareDensity("norm", _normal, _sizes);
+        
+        printSubHeader("Равномерное распределение U(0,1)");
+        compareDensity("uniform", _uniform, _sizes);
     }
 
     void demonstratePersistence()
@@ -254,7 +229,7 @@ namespace ModelingRandomValue::Demonstrate
         printHeader("7. ТЕСТИРОВАНИЕ ПРОИЗВОДИТЕЛЬНОСТИ");
 
         UniformLogisticDistribution _dist(1.0);
-        vector<int> _sizes = {10000, 100000, 1000000};
+        vector<int> _sizes = {10000, 100000, 1000000, 10000000};
 
         printSeparator('-', 47);
         printStringTable<string>({{"Size", 12}, {"Time (ms)", 15}, {"Element/s", 20}});

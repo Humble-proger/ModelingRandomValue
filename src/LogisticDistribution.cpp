@@ -7,7 +7,7 @@ namespace ModelingRandomValue::Distribution
     LogisticDistribution::LogisticDistribution(double loc, double s) 
     : _loc(loc)
     , _scale(s)
-    , _uniform(0.0, 1.0) 
+    , _uniform(1e-300, 1.0 - 1e-300) 
     {
         if (s <= 0.0) {
             throw std::invalid_argument("Параметр масштаба должен быть положительным");
@@ -18,24 +18,17 @@ namespace ModelingRandomValue::Distribution
     {
         double _u = (x - _loc) / _scale;
 
+        // NOTE: Защита от переполнения
         if (x > 100.0) return 1.0;
         if (x < -100.0) return 0.0;
         return 1.0 / (1.0 + exp(-_u));
-    }
-
-    double LogisticDistribution::quantile(double p) const 
-    {
-        if (p <= 0.0 || p >= 1.0) 
-        {
-            throw invalid_argument("p должно быть в интервале (0, 1)");
-        }
-        return _loc - _scale * log((1.0 - p) / p);
     }
 
     double LogisticDistribution::density(double x) const 
     {
         double _u = (x - _loc) / _scale;
 
+        // NOTE: Защита от переполнения
         if (_u > 100.0) return 0.0;
         if (_u < -100.0) return 0.0;
 
@@ -46,9 +39,8 @@ namespace ModelingRandomValue::Distribution
     double LogisticDistribution::random() 
     {
         double _p = _uniform.random();
-        _p = max(min(_p, 1.0 - 1e-10), 1e-10);
 
-        return quantile(_p);
+        return _loc - _scale * log((1 - _p) / _p);
     }
 
     double LogisticDistribution::mean() const 

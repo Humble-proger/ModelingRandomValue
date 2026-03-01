@@ -49,7 +49,7 @@ namespace ModelingRandomValue::AdditionalFunc
         static_assert(is_base_of<IDistribution, Dist>::value, "Передаваемый класс не является распределением");
         printSubHeader(nameDist);
 
-        cout << setw(2) << "Плотность в x =" << setprecision(1) << x << ": " << setprecision(6) << dist.density(x) << endl;
+        cout << string(2, ' ') << "Плотность в x = " << setprecision(1) << x << ": " << defaultfloat << noshowpoint << dist.density(x) << endl;
         printValue("Мат. ожидание", dist.mean());
         printValue("Дисперсия", dist.variance());
         printValue("Коэф. асимметрии", dist.skewness());
@@ -100,4 +100,51 @@ namespace ModelingRandomValue::AdditionalFunc
     /// @param bounds пара границ (левая граница, правая граница)
     /// @param n количество разбиений
     void saveTheoreticalDensity(const string &fileBasenameNoExtension, IDistribution &dist, pair<double, double> bounds, size_t n = 500);
+
+    /// @brief Сравнение эмпирической плотности с теоретической
+    /// @tparam Dist распределение, которое наследовано от IDistribution
+    /// @param distName имя распределения
+    /// @param dist распределение
+    /// @param sizes список пар ключей (размер выборки, количество столбцов)
+    template<typename Dist>
+    void compareDensity(const string& distName, Dist &dist, vector<pair<size_t, size_t>>& sizes) 
+    {
+        static_assert(is_base_of<IDistribution, Dist>::value, "Передаваемый класс не является распределением");
+        for (const auto& _elem : sizes)
+        {
+            printSubHeader("Объем выборки n = " + to_string(_elem.first));
+
+            DataSet _dataSet;
+            for (int _i = 0; _i < _elem.first; _i++)
+            {
+                _dataSet.add(dist.random());
+            }
+
+            Histogram _hist(_dataSet, _elem.second);
+
+            double _minVal = _dataSet.min();
+            double _maxVal = _dataSet.max();
+            double _step = (_maxVal - _minVal) / 100.0;
+
+            double _totalError = 0.0;
+            int _points = 0;
+
+            for (double _x = _minVal; _x <= _maxVal; _x += _step)
+            {
+                double _theoretical = dist.density(_x);
+                double _empirical = _hist.getEmpiricalDensity(_x);
+                _totalError += abs(_theoretical - _empirical);
+                _points++;
+            }
+
+            double _meanError = _totalError / _points;
+            printValue("Среднее абсолютное отклонение", _meanError);
+
+            string _filename = distName + "_n" + to_string(_elem.second);
+            _hist.saveToFile(_filename);
+            printText("Данные сохранены в " + _filename + ".csv");
+            saveTheoreticalDensity(_filename + "_theoretical", dist, { _hist.getMinBound(), _hist.getMaxBound() }, 100);
+            printText("Данные о теоретической плотности сохранены в " + _filename + "_theoretical.csv");
+        }
+    }
 }

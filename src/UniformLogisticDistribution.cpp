@@ -30,9 +30,7 @@ namespace ModelingRandomValue::Distribution {
     double UniformLogisticDistribution::random()
     {
         double _u = _uniform.random();
-
         double _y = _logistic.random();
-
         return _u + _y;
     }
 

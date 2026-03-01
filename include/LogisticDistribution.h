@@ -73,10 +73,5 @@ namespace ModelingRandomValue::Distribution
         /// @param x аргумент
         /// @return F(x) = 1/(1 + e^(-(x-μ)/s))
         double cdf(double x) const;
-
-        /// @brief Квантиль логистического распределения
-        /// @param p вероятность (0 < p < 1)
-        /// @return x = μ - s * ln((1-p)/p)
-        double quantile(double p) const;
     };
 }
