@@ -8,22 +8,24 @@ namespace ModelingRandomValue::Distribution
     ///
     /// Параметры:
     ///
-    ///     - lower - левая граница (по умолчанию 0)
+    ///     - loc - сдвиг (по умолчанию 0.5)
     ///
-    ///     - upper - правая граница (по умолчанию 1)
+    ///     - scale - масштаб (по умолчанию 1)
     /// @note Распределение симметрично относительно location
-    class UniformDistribution : public IDistribution, public IPersistent
+    class UniformDistribution : public Interfaces::IDistribution, public Interfaces::IPersistent
     {
     private:
-        double _lower = 0.0;
-        double _upper = 1.0;
+        double _loc = 0.5;
+        double _scale = 1.0;
+        double _scaleDiv2 = 0.5;
         uniform_real_distribution<double> _uniform;
+
     public:
         /// @brief Конструктор
-        /// @param a левая граница
-        /// @param b правая граница (b > a)
-        /// @throw std::invalid_argument если b <= a
-        explicit UniformDistribution(double a = 0.0, double b = 1.0);
+        /// @param loc сдвиг
+        /// @param scale масштаб
+        /// @throw std::invalid_argument если scale <= 0
+        explicit UniformDistribution(double loc = 0.5, double scale = 1.0);
 
 // NOTE: Реализация методов IDistribution
 #pragma region IDistribution
@@ -33,6 +35,10 @@ namespace ModelingRandomValue::Distribution
         double variance() const override;
         double skewness() const override;
         double kurtosis() const override;
+        double getLocation() const override { return _loc; }
+        double getScale() const override { return _scale; }
+        void setLocation(double loc) override;
+        void setScale(double s) override;
 #pragma endregion
 
 // NOTE: Реализация методов IPersistent
@@ -41,36 +47,6 @@ namespace ModelingRandomValue::Distribution
         void load(istream &in) override;
 #pragma endregion
 
-        /// @brief Получить параметр левой границы равномерного распределения
-        /// @return Параметр левой границы равномерного распределения
-        double getLower() const 
-        {
-            return _lower;
-        }
-
-        /// @brief Получить параметр правой границы равномерного распределения
-        /// @return Параметр правой границы равномерного распределения
-        double getUpper() const 
-        {
-            return _upper;
-        }
-
-        /// @brief Установить параметры границ равномерного распределения
-        /// @param a левая границы
-        /// @param b правая граница
-        void setBounds(double a, double b);
-
-        /// @brief Функция распределения равномерного распределения
-        /// @param x аргумент
-        /// @return F(x) = (x - a) / (b - a)
-        double cdf(double x) const;
-
-        /// @brief Квантиль равномерного распределения
-        /// @param p вероятность (0 <= p <= 1)
-        /// @return x = a + p * (b - a)
-        double quantile(double p) const;
-
-        /// @brief Диструктор
-        virtual ~UniformDistribution() = default;
+        ~UniformDistribution() = default;
     };
 }

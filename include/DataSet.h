@@ -1,17 +1,9 @@
 #pragma once
-#include "IObserver.h"
-#include <vector>
-#include <list>
-#include <algorithm>
-#include <cmath>
-#include <stdexcept>
 
-using namespace ModelingRandomValue::Interfaces;
-using namespace std;
+#include "interfaces.h"
 
 namespace ModelingRandomValue::Data
 {
-
     /// @brief Класс набора данных
     ///
     /// Содержит выборку случайных чисел и предоставляет методы
@@ -21,7 +13,7 @@ namespace ModelingRandomValue::Data
     {
     private:
         vector<double> _data;
-        list<IObserver *> _observers;
+        list<Interfaces::IObserver *> _observers;
 
         // NOTE: Флаги для кэширования (для оптимизации)
         mutable bool _cacheValid = false;
@@ -59,11 +51,11 @@ namespace ModelingRandomValue::Data
 
         /// @brief Добавить наблюдателя
         /// @param observer указатель на наблюдателя
-        void attach(IObserver *observer);
+        void attach(Interfaces::IObserver *observer);
 
         /// @brief Удалить наблюдателя
         /// @param observer указатель на наблюдателя
-        void detach(IObserver *observer);
+        void detach(Interfaces::IObserver *observer);
 
         /// @brief Уведомить всех наблюдателей об изменении
         void notify();

@@ -2,6 +2,8 @@
 
 namespace ModelingRandomValue::Data
 {
+    using namespace Interfaces;
+
     DataSet::DataSet() {}
 
     DataSet::DataSet(const vector<double>& initialData) : _data(initialData) {}

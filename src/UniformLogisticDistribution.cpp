@@ -3,13 +3,14 @@
 
 namespace ModelingRandomValue::Distribution {
     
-    UniformLogisticDistribution::UniformLogisticDistribution(double s) 
+    UniformLogisticDistribution::UniformLogisticDistribution(double loc, double s) 
     : _scale(s)
-    , _uniform(-1.0, 1.0)
-    , _logistic(0.0, s)
+    , _loc(loc)
+    , _uniform(0.0, 2.0)
+    , _logistic(0.0, 1.0)
     {
         if (s <= 0.0) {
-            throw std::invalid_argument("Параметр масштаба должен быть положительным");
+            throw invalid_argument("Параметр масштаба должен быть положительным");
         }
     }
 
@@ -31,19 +32,20 @@ namespace ModelingRandomValue::Distribution {
     {
         double _u = _uniform.random();
         double _y = _logistic.random();
-        return _u + _y;
+
+        return _loc + _scale * (_u + _y);
     }
 
     /// @note Математическое ожидание равно 0 для симметричного распределения
     double UniformLogisticDistribution::mean() const
     {
-        return 0.0;
+        return _loc;
     }
 
     /// @note Дисперсия: D = 1/3 + (pi^2 * s^2) / 3
     double UniformLogisticDistribution::variance() const 
     {
-        return (1.0 / 3.0) + _logistic.variance();
+        return (1.0 / 3.0) + _logistic.variance() * _scale * _scale;
     }
 
     /// @note Коэффициент асимметрии равен 0 для симметричного распределения
@@ -52,24 +54,24 @@ namespace ModelingRandomValue::Distribution {
         return 0.0;
     }
 
-    /// @note Коэффициент эксцесса = -1.2 + (6 * pi^2 * s^2 / 5) / D^2
+    /// @note Коэффициент эксцесса = 1.2 * (pi^2 * s^2 - 1) / (pi^2 * s^2 + 1)
     double UniformLogisticDistribution::kurtosis() const 
     {
-        double _var = variance();
-        double _secTerm = (6.0 * M_PI * M_PI * _scale * _scale / 5.0) / (_var * _var);
+        double _piScaleDegree2 = M_PI * M_PI * _scale * _scale;
 
-        return -1.2 + _secTerm;
+        return 1.2 * (_piScaleDegree2 - 1.0) / (_piScaleDegree2 + 1.0);
     }
 
     void UniformLogisticDistribution::save(ostream& out) const 
     {
-        out << _scale;
+        out << _loc << ' ' << _scale;
     }
 
     void UniformLogisticDistribution::load(istream& in) 
     {
+        double loc;
         double s;
-        in >> s;
+        in >> loc >> s;
         if (in.fail()) 
         {
             throw runtime_error("Ошибка чтения параметра из файла");
@@ -78,8 +80,8 @@ namespace ModelingRandomValue::Distribution {
         {
             throw runtime_error("Некорректное значение параметра в файле");
         }
+        _loc = loc;
         _scale = s;
-        _logistic.setScale(s);
     }
 
     void UniformLogisticDistribution::setScale(double s) 
@@ -89,6 +91,10 @@ namespace ModelingRandomValue::Distribution {
             throw invalid_argument("Параметр масштаба должен быть положительным");
         }
         _scale = s;
-        _logistic.setScale(s);
+    }
+
+    void UniformLogisticDistribution::setLocation(double loc) 
+    {
+        _loc = loc;
     }
 };

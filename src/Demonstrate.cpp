@@ -2,28 +2,41 @@
 
 namespace ModelingRandomValue::Demonstrate
 {
+    using namespace AdditionalFunc;
+    using namespace Data;
+    using namespace Observers;
+    using namespace Distribution;
+    
     void demonstrateDistributions()
     {
         printHeader("1. ДЕМОНСТРАЦИЯ РАСПРЕДЕЛЕНИЙ");
 
         UniformDistribution _uniform(0.0, 1.0);
         printDist("Равномерное распределение U(0,1)", _uniform, 0.5);
+        locScaleConverting(_uniform);
+        valuesDistributionCharacteristics(_uniform);
 
         NormalDistribution _normal(0.0, 1.0);
         printDist("Нормальное распределение N(0,1)", _normal, 0.0);
+        locScaleConverting(_normal);
+        valuesDistributionCharacteristics(_normal);
 
         LogisticDistribution _logistic(0.0, 1.0);
         printDist("Логистическое распределение Logistic(0,1)", _logistic, 0.0);
+        locScaleConverting(_logistic);
+        valuesDistributionCharacteristics(_logistic);
 
         UniformLogisticDistribution _smooth(1.0);
         printDist("Сглаженное равномерное (вариант 13) s=1.0", _smooth, 0.0);
+        locScaleConverting(_smooth);
+        valuesDistributionCharacteristics(_smooth);
     }
 
     void demonstrateSampling()
     {
         printHeader("2. ГЕНЕРАЦИЯ ВЫБОРОК И ПРОВЕРКА СХОДИМОСТИ");
 
-        UniformLogisticDistribution _dist(1.0);
+        UniformLogisticDistribution _dist(3.0, 2.0);
 
         vector<int> _sizes = {10, 100, 1000, 10000, 100000};
 
@@ -199,14 +212,14 @@ namespace ModelingRandomValue::Demonstrate
         {
             ifstream _file("output/uniform_dist.txt");
             _loadedUniform.load(_file);
-            cout << string(2, ' ') << "Загружено равномерное: [" << _loadedUniform.getLower() << ", " << _loadedUniform.getUpper() << "]" << endl;
+            cout << string(2, ' ') << "Загружено равномерное: [" << _loadedUniform.getLocation() << ", " << _loadedUniform.getScale() << "]" << endl;
         }
 
         NormalDistribution _loadedNormal(0.0, 1.0);
         {
             ifstream _file("output/normal_dist.txt");
             _loadedNormal.load(_file);
-            cout << string(2, ' ') << "Загружено нормальное: [" << _loadedNormal.getMean() <<  ", " << _loadedNormal.getStddev() << "]" << endl;
+            cout << string(2, ' ') << "Загружено нормальное: [" << _loadedNormal.getLocation() <<  ", " << _loadedNormal.getScale() << "]" << endl;
         }
 
         LogisticDistribution _loadedLogistic(0.0, 1.0);

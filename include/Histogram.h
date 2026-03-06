@@ -1,15 +1,7 @@
 #pragma once
-#include "IObserver.h"
+
+#include "interfaces.h"
 #include "DataSet.h"
-#include <vector>
-#include <algorithm>
-#include <cmath>
-#include <fstream>
-#include <iomanip>
-
-
-using namespace std;
-using namespace ModelingRandomValue::Data;
 
 namespace ModelingRandomValue::Observers
 {
@@ -21,10 +13,10 @@ namespace ModelingRandomValue::Observers
     /// Эмпирическая плотность вычисляется по формуле:
     ///
     /// f(x) = (количество элементов в столбце) / ( объем выборки * ширина столбца )
-    class Histogram : public IObserver
+    class Histogram : public Interfaces::IObserver
     {
     private:
-        DataSet &_dataSet;
+        Data::DataSet &_dataSet;
 
         size_t _numCols = 0;
 
@@ -48,7 +40,7 @@ namespace ModelingRandomValue::Observers
         /// @brief Конструктор
         /// @param ds Ссылка на набор данных
         /// @param cols Количество столбцов гистограммы (cols > 0)
-        explicit Histogram(DataSet &ds, size_t cols = 10);
+        explicit Histogram(Data::DataSet &ds, size_t cols = 10);
 
         /// @brief Диструктор
         ~Histogram();

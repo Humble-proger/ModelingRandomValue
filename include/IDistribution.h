@@ -1,7 +1,5 @@
 #pragma once
-#include <random>
-#include <cmath>
-#include <stdexcept>
+#include "Common.h"
 
 #define interface struct
 
@@ -36,7 +34,23 @@ namespace ModelingRandomValue::Interfaces
         /// @return Значение коэффициента эксцесса случайной величины
         virtual double kurtosis() const = 0;
 
+        /// @brief Получить параметр сдвига распределения
+        /// @return Параметр сдвига распределения
+        virtual double getLocation() const = 0;
+
+        /// @brief Получить параметр масштаба распределения
+        /// @return Параметр масштаба распределения
+        virtual double getScale() const = 0;
+
+        /// @brief Установить параметр сдвига равномерного распределения
+        /// @param loc Параметр сдвига равномерного распределения
+        virtual void setLocation(double loc) = 0;
+
+        /// @brief Установить параметр масштаба равномерного распределения
+        /// @param scale Параметр масштаба равномерного распределения
+        virtual void setScale(double scale) = 0;
+
     protected:
-        static std::default_random_engine generator;
+        static default_random_engine generator;
     };
 }

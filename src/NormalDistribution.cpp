@@ -65,15 +65,21 @@ namespace ModelingRandomValue::Distribution
         }
         _mean = mean;
         _stddev = stddev;
-        _normal = std::normal_distribution<double>(mean, stddev);
+        _normal = normal_distribution<double>(mean, stddev);
     }
 
-    void NormalDistribution::setStddev(double stddev) {
-        if (stddev <= 0.0) 
+    void NormalDistribution::setScale(double s) {
+        if (s <= 0.0) 
         {
             throw invalid_argument("Стандартное отклонение должно быть положительным");
         }
-        _stddev = stddev;
-        _normal = normal_distribution<double>(_mean, stddev);
+        _stddev = s;
+        _normal = normal_distribution<double>(_mean, s);
+    }
+
+    void NormalDistribution::setLocation(double loc) 
+    {
+        _mean = loc;
+        _normal = normal_distribution<double>(loc, _stddev);
     }
 } 

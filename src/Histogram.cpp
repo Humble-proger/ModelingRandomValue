@@ -2,7 +2,7 @@
 
 namespace ModelingRandomValue::Observers
 {
-    Histogram::Histogram(DataSet &ds, size_t cols)
+    Histogram::Histogram(Data::DataSet &ds, size_t cols)
         : _dataSet(ds), _numCols(cols)
     {
         _densities.resize(_numCols, 0.0);

@@ -2,7 +2,10 @@
 
 namespace ModelingRandomValue::AdditionalFunc
 {
-
+    using namespace Observers;
+    using namespace Data;
+    using namespace Interfaces;
+    
     void printSeparator(char c, int length)
     {
         cout << string(length, c) << endl;
