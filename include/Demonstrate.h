@@ -1,17 +1,10 @@
 #pragma once
+
 #include "AdditionalFunc.h"
-#include "DataSet.h"
-#include "Histogram.h"
 #include "LogisticDistribution.h"
 #include "UniformLogisticDistribution.h"
 #include "UniformDistribution.h"
 #include "NormalDistribution.h"
-
-using namespace std;
-using namespace ModelingRandomValue::AdditionalFunc;
-using namespace ModelingRandomValue::Data;
-using namespace ModelingRandomValue::Observers;
-using namespace ModelingRandomValue::Distribution;
 
 namespace ModelingRandomValue::Demonstrate 
 {

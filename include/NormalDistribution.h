@@ -12,7 +12,7 @@ namespace ModelingRandomValue::Distribution
     ///
     ///    - stddev - среднеквадратичное отклонение (по умолчанию 1)
     /// @note Распределение симметрично относительно location
-    class NormalDistribution : public IDistribution, public IPersistent
+    class NormalDistribution : public Interfaces::IDistribution, public Interfaces::IPersistent
     {
     private:
         double _mean = 0.0;
@@ -34,6 +34,10 @@ namespace ModelingRandomValue::Distribution
         double variance() const override;
         double skewness() const override;
         double kurtosis() const override;
+        double getLocation() const override { return _mean; }
+        double getScale() const override { return _stddev; }
+        void setLocation(double loc) override;
+        void setScale(double s) override;
 #pragma endregion
 
 // NOTE: Реализация методов IPersistent
@@ -42,32 +46,6 @@ namespace ModelingRandomValue::Distribution
         void load(istream &in) override;
 #pragma endregion
 
-        /// @brief Получить параметр математического ожидания нормального распределения
-        /// @return Параметр математического ожидания нормального распределения
-        double getMean() const
-        {
-            return _mean;
-        }
-
-        /// @brief Получить параметр среднеквадратичного отклонения  нормального распределения
-        /// @return Параметр среднеквадратичного отклонения  нормального распределения
-        double getStddev() const
-        {
-            return _stddev;
-        }
-
-        /// @brief Установить параметр математического ожидания нормального распределения
-        /// @return Параметр математического ожидания нормального распределения
-        void setMean(double mean)
-        {
-            _mean = mean;
-        }
-
-        /// @brief Установить параметр среднеквадратичного отклонения  нормального распределения
-        /// @return Параметр среднеквадратичного отклонения  нормального распределения
-        void setStddev(double stddev);
-
-        /// @brief Диструктор
-        virtual ~NormalDistribution() = default;
+    ~NormalDistribution() = default;
     };
 }

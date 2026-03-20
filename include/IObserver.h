@@ -1,4 +1,5 @@
 #pragma once
+#include "Common.h"
 #define interface struct
 
 namespace ModelingRandomValue::Interfaces

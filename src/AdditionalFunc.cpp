@@ -2,6 +2,9 @@
 
 namespace ModelingRandomValue::AdditionalFunc
 {
+    using namespace Observers;
+    using namespace Data;
+    using namespace Interfaces;
 
     void printSeparator(char c, int length)
     {
@@ -120,6 +123,24 @@ namespace ModelingRandomValue::AdditionalFunc
         for (double _elapsedX = bounds.first; _elapsedX < bounds.second; _elapsedX += _step)
         {
             _file << _elapsedX << "," << dist.density(_elapsedX) << endl;
+        }
+    }
+
+    void saveEmpiricalDensity(const string &fileBasenameNoExtension, Data::DataSet &dataSet, Observers::Histogram &hist)
+    {
+        ofstream _file("output/" + fileBasenameNoExtension + ".csv");
+        if (!_file.is_open())
+        {
+            throw runtime_error("Невозможно открыть файл для записи: " + fileBasenameNoExtension + ".csv");
+        }
+
+        _file << fixed << setprecision(6);
+
+        _file << "x,empirical_density" << endl;
+
+        for (double _x_value : dataSet.getData())
+        {
+            _file << _x_value << "," << hist.getEmpiricalDensity(_x_value) << endl;
         }
     }
 }

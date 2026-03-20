@@ -7,7 +7,7 @@ namespace ModelingRandomValue::Distribution
     LogisticDistribution::LogisticDistribution(double loc, double s) 
     : _loc(loc)
     , _scale(s)
-    , _uniform(1e-300, 1.0 - 1e-300) 
+    , _uniform(0.5, 1.0 - 2e-300) 
     {
         if (s <= 0.0) {
             throw std::invalid_argument("Параметр масштаба должен быть положительным");
@@ -92,5 +92,10 @@ namespace ModelingRandomValue::Distribution
             throw invalid_argument("Параметр масштаба должен быть положительным");
         }
         _scale = s;
+    }
+
+    void LogisticDistribution::setLocation(double loc) 
+    {
+        _loc = loc;
     }
 }

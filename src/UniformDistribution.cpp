@@ -3,22 +3,23 @@
 
 namespace ModelingRandomValue::Distribution 
 {
-    UniformDistribution::UniformDistribution(double a, double b) 
-    : _lower(a)
-    , _upper(b)
-    , _uniform(a, b) 
+    UniformDistribution::UniformDistribution(double loc, double scale) 
+    : _loc(loc)
+    , _scale(scale)
     {
-        if (b <= a) 
+        if (scale <= 0) 
         {
-            throw invalid_argument("Правая граница должна быть больше левой");
+            throw invalid_argument("Параметр масштаба должен быть положительным");
         }
+        double _scaleDiv2 = scale / 2;
+        _uniform = uniform_real_distribution<double>(loc - _scaleDiv2, loc + _scaleDiv2);
     }
 
     double UniformDistribution::density(double x) const
     {
-        if (x >= _lower && x <= _upper) 
+        if (abs(x - _loc) <= _scale) 
         {
-            return 1.0 / (_upper - _lower);
+            return 1.0 / _scale;
         }
         return 0.0;
     }
@@ -30,13 +31,12 @@ namespace ModelingRandomValue::Distribution
 
     double UniformDistribution::mean() const 
     {
-        return (_lower + _upper) / 2.0;
+        return _loc;
     }
 
     double UniformDistribution::variance() const 
     {
-        double _width = _upper - _lower;
-        return _width * _width / 12.0;
+        return _scale * _scale / 12.0;
     }
 
     /// @note Коэффициент асимметрии = 0 для симметричного закона
@@ -50,47 +50,40 @@ namespace ModelingRandomValue::Distribution
     {
         return -1.2;
     }
-
-    double UniformDistribution::cdf(double x) const 
-    {
-        if (x < _lower) return 0.0;
-        if (x > _upper) return 1.0;
-        return (x - _lower) / (_upper - _lower);
-    }
-
-    double UniformDistribution::quantile(double p) const 
-    {
-        if (p < 0.0 || p > 1.0) 
-        {
-            throw invalid_argument("p должно быть в интервале [0, 1]");
-        }
-        return _lower + p * (_upper - _lower);
-    }
     
     void UniformDistribution::save(ostream& out) const {
-        out << _lower << " " << _upper;
+        out << _loc << " " << _scale;
     }
 
     void UniformDistribution::load(istream& in) {
-        double a, b;
-        in >> a >> b;
+        double loc, scale;
+        in >> loc >> scale;
         if (in.fail()) {
-            throw std::runtime_error("Ошибка чтения параметров из файла");
+            throw runtime_error("Ошибка чтения параметров из файла");
         }
-        if (b <= a) {
-            throw std::runtime_error("Некорректные границы в файле");
+        if (scale <= 0) {
+            throw runtime_error("Параметр масштаба должен быть положительным");
         }
-        _lower = a;
-        _upper = b;
-        _uniform = uniform_real_distribution<double>(a, b);
+        _loc = loc;
+        _scale = scale;
+        _scaleDiv2 = scale / 2;
+        _uniform = uniform_real_distribution<double>(loc - _scaleDiv2, loc + _scaleDiv2);
     }
 
-    void UniformDistribution::setBounds(double a, double b) {
-        if (b <= a) {
-            throw std::invalid_argument("Правая граница должна быть больше левой");
+    void UniformDistribution::setLocation(double loc) 
+    {
+        _loc = loc;
+        _uniform = uniform_real_distribution<double>(loc - _scaleDiv2, loc + _scaleDiv2);
+    }
+
+    void UniformDistribution::setScale(double s) 
+    {
+        if (s <= 0) 
+        {
+            throw invalid_argument("Параметр масштаба должен быть положительным");
         }
-        _lower = a;
-        _upper = b;
-        _uniform = uniform_real_distribution<double>(a, b);
+        _scale = s;
+        _scaleDiv2 = _scale / 2;
+        _uniform = uniform_real_distribution<double>(_loc - _scaleDiv2, _loc + _scaleDiv2);
     }
 }
