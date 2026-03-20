@@ -6,7 +6,7 @@ namespace ModelingRandomValue::Demonstrate
     using namespace Data;
     using namespace Observers;
     using namespace Distribution;
-    
+
     void demonstrateDistributions()
     {
         printHeader("1. ДЕМОНСТРАЦИЯ РАСПРЕДЕЛЕНИЙ");
@@ -26,8 +26,8 @@ namespace ModelingRandomValue::Demonstrate
         locScaleConverting(_logistic);
         valuesDistributionCharacteristics(_logistic);
 
-        UniformLogisticDistribution _smooth(1.0);
-        printDist("Сглаженное равномерное (вариант 13) s=1.0", _smooth, 0.0);
+        UniformLogisticDistribution _smooth(0.0, 1.0);
+        printDist("Сглаженное равномерное (вариант 13) loc=0.0, s=1.0", _smooth, 0.0);
         locScaleConverting(_smooth);
         valuesDistributionCharacteristics(_smooth);
     }
@@ -40,7 +40,8 @@ namespace ModelingRandomValue::Demonstrate
 
         vector<int> _sizes = {10, 100, 1000, 10000, 100000};
 
-        printSubHeader("Теоретические характеристики");
+        printSubHeader("Сглаженное равномерное (вариант 13) loc=3.0 s=2.0");
+        printText("Теоретические характеристики");
         printValue("Среднее", _dist.mean());
         printValue("Дисперсия", _dist.variance());
         printValue("Коэф. асимметрии", _dist.skewness());
@@ -132,7 +133,8 @@ namespace ModelingRandomValue::Demonstrate
         for (double _x : _testPoints)
         {
             cout << string(2, ' ') << "f(" << _x << "): " << _hist.getEmpiricalDensity(_x) << endl;
-            cout << string(2, ' ') << "f_теор(" << _x << "): " << _logical.density(_x) << endl << endl;
+            cout << string(2, ' ') << "f_теор(" << _x << "): " << _logical.density(_x) << endl
+                 << endl;
         }
 
         printSubHeader("Первые 5 столбцов гистограммы");
@@ -141,32 +143,33 @@ namespace ModelingRandomValue::Demonstrate
 
         for (int _i = 0; _i < 5; _i++)
         {
-            cout << endl << string(2, ' ') << "Столбец " << _i << ": [" << _bounds[_i].first << ", " << _bounds[_i].second << "]" << endl;
+            cout << endl
+                 << string(2, ' ') << "Столбец " << _i << ": [" << _bounds[_i].first << ", " << _bounds[_i].second << "]" << endl;
             printValue("Плотность", _densities[_i]);
         }
 
-        _hist.saveToFile("logical_histogram");
-        printText("\nДанные сохранены в logical_histogram.csv");
-        saveTheoreticalDensity("logical_theoretical_densities", _logical, { _hist.getMinBound(), _hist.getMaxBound() }, 100);
-        printText("Данные о теоретической плотности сохранены в logical_theoretical_densities.csv");
+        _hist.saveToFile("logical_n15");
+        printText("\nДанные сохранены в logical_n15.csv");
+        saveTheoreticalDensity("logical_n15_theoretical", _logical, {_hist.getMinBound(), _hist.getMaxBound()}, 100);
+        printText("Данные о теоретической плотности сохранены в logical_theoretical_n15.csv");
     }
 
     void demonstrateDensityComparison()
     {
         printHeader("5. СРАВНЕНИЕ ТЕОРЕТИЧЕСКОЙ И ЭМПИРИЧЕСКОЙ ПЛОТНОСТИ");
 
-        UniformLogisticDistribution _uniformLogical(1.0);
+        UniformLogisticDistribution _uniformLogical(0.0, 1.0);
         UniformDistribution _uniform(0.0, 1.0);
         NormalDistribution _normal(0.0, 1.0);
 
         vector<pair<size_t, size_t>> _sizes = {{100, 7}, {1000, 20}, {10000, 40}, {10000000, 100}};
 
-        printSubHeader("Сглаженное равномерное (вариант 13) s=1.0");
+        printSubHeader("Сглаженное равномерное (вариант 13) loc=0.0, s=1.0");
         compareDensity("smooth", _uniformLogical, _sizes);
-        
+
         printSubHeader("Нормальное распределение N(0,1)");
         compareDensity("norm", _normal, _sizes);
-        
+
         printSubHeader("Равномерное распределение U(0,1)");
         compareDensity("uniform", _uniform, _sizes);
     }
@@ -178,32 +181,32 @@ namespace ModelingRandomValue::Demonstrate
         UniformDistribution _uniform(2.0, 5.0);
         NormalDistribution _normal(5.0, 2.0);
         LogisticDistribution _logistic(10.0, 3.0);
-        UniformLogisticDistribution _smooth(1.5);
+        UniformLogisticDistribution _smooth(3.1, 1.5);
 
         printSubHeader("Сохранение распределений");
 
         {
             ofstream _file("output/uniform_dist.txt");
             _uniform.save(_file);
-            printText("Равномерное распределение сохранено в uniform_dist.txt");
+            printText("Равномерное распределение [2, 5] сохранено в uniform_dist.txt");
         }
 
         {
             ofstream _file("output/normal_dist.txt");
             _normal.save(_file);
-            printText("Нормальное распределение сохранено в normal_dist.txt");
+            printText("Нормальное распределение [5, 2] сохранено в normal_dist.txt");
         }
 
         {
             ofstream _file("output/logistic_dist.txt");
             _logistic.save(_file);
-            printText("Логистическое распределение сохранено в logistic_dist.txt");
+            printText("Логистическое распределение [10, 3] сохранено в logistic_dist.txt");
         }
 
         {
             ofstream _file("output/smooth_dist.txt");
             _smooth.save(_file);
-            printText("Сглаженное равномерное сохранено в smooth_dist.txt");
+            printText("Сглаженное равномерное [3.1, 1.5] сохранено в smooth_dist.txt");
         }
 
         printSubHeader("Загрузка распределений");
@@ -219,21 +222,21 @@ namespace ModelingRandomValue::Demonstrate
         {
             ifstream _file("output/normal_dist.txt");
             _loadedNormal.load(_file);
-            cout << string(2, ' ') << "Загружено нормальное: [" << _loadedNormal.getLocation() <<  ", " << _loadedNormal.getScale() << "]" << endl;
+            cout << string(2, ' ') << "Загружено нормальное: [" << _loadedNormal.getLocation() << ", " << _loadedNormal.getScale() << "]" << endl;
         }
 
         LogisticDistribution _loadedLogistic(0.0, 1.0);
         {
             ifstream _file("output/logistic_dist.txt");
             _loadedLogistic.load(_file);
-            cout << string(2, ' ') << "Загружено логистическое: [" << _loadedLogistic.getLocation() <<  ", " << _loadedLogistic.getScale() << "]" << endl;
+            cout << string(2, ' ') << "Загружено логистическое: [" << _loadedLogistic.getLocation() << ", " << _loadedLogistic.getScale() << "]" << endl;
         }
 
-        UniformLogisticDistribution _loadedSmooth(1.0);
+        UniformLogisticDistribution _loadedSmooth(0.0, 1.0);
         {
             ifstream _file("output/smooth_dist.txt");
             _loadedSmooth.load(_file);
-            cout << string(2, ' ') << "Загружено сглаженное: s=" << _loadedSmooth.getScale() << endl;
+            cout << string(2, ' ') << "Загружено сглаженное: [" << _loadedSmooth.getLocation() << ", " << _loadedSmooth.getScale() << "]" << endl;
         }
     }
 

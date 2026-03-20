@@ -3,7 +3,7 @@
 int main()
 {
     using namespace ModelingRandomValue::Demonstrate;
-    
+
     setlocale(LC_ALL, "ru_RU.UTF-8");
 
     demonstrateDistributions();

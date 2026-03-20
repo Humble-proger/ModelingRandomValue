@@ -95,6 +95,12 @@ namespace ModelingRandomValue::AdditionalFunc
     /// @param n количество разбиений
     void saveTheoreticalDensity(const string &fileBasenameNoExtension, Interfaces::IDistribution &dist, pair<double, double> bounds, size_t n = 500);
 
+    /// @brief Сохранить эмпирическую выборку значений плотности гистограммы
+    /// @param fileBasenameNoExtension имя файла без расширения
+    /// @param dataSet выборка
+    /// @param hist гистограмма
+    void saveEmpiricalDensity(const string &fileBasenameNoExtension, Data::DataSet &dataSet, Observers::Histogram &hist);
+
     /// @brief Сравнение эмпирической плотности с теоретической
     /// @tparam Dist распределение, которое наследовано от IDistribution
     /// @param distName имя распределения
@@ -137,6 +143,11 @@ namespace ModelingRandomValue::AdditionalFunc
             string _filename = distName + "_n" + to_string(_elem.second);
             _hist.saveToFile(_filename);
             printText("Данные сохранены в " + _filename + ".csv");
+            if (_elem.second < 10)
+            {
+                saveEmpiricalDensity(_filename + "_raw", _dataSet, _hist);
+                printText("Данные сохранены в " + _filename + "_raw.csv");
+            }
             saveTheoreticalDensity(_filename + "_theoretical", dist, {_hist.getMinBound(), _hist.getMaxBound()}, 100);
             printText("Данные о теоретической плотности сохранены в " + _filename + "_theoretical.csv");
         }
