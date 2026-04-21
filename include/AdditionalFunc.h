@@ -4,6 +4,7 @@
 #include "Common.h"
 #include "DataSet.h"
 #include "Histogram.h"
+#include "UniformLogisticDistribution.h"
 
 namespace ModelingRandomValue::AdditionalFunc
 {
@@ -101,6 +102,12 @@ namespace ModelingRandomValue::AdditionalFunc
     /// @param hist гистограмма
     void saveEmpiricalDensity(const string &fileBasenameNoExtension, Data::DataSet &dataSet, Observers::Histogram &hist);
 
+    /// @brief Сохранить теоретическую выборку значений функции плотности по dataSet
+    /// @param fileBasenameNoExtension имя файла без расширения
+    /// @param dist распределение
+    /// @param dataSet выборка
+    void saveTheoreticalByData(const string &fileBasenameNoExtension, Interfaces::IDistribution &dist, Data::DataSet &dataSet);
+
     /// @brief Сравнение эмпирической плотности с теоретической
     /// @tparam Dist распределение, которое наследовано от IDistribution
     /// @param distName имя распределения
@@ -147,8 +154,12 @@ namespace ModelingRandomValue::AdditionalFunc
             {
                 saveEmpiricalDensity(_filename + "_raw", _dataSet, _hist);
                 printText("Данные сохранены в " + _filename + "_raw.csv");
+                saveTheoreticalByData(_filename + "_theoretical", dist, _dataSet);
             }
-            saveTheoreticalDensity(_filename + "_theoretical", dist, {_hist.getMinBound(), _hist.getMaxBound()}, 100);
+            else
+            {
+                saveTheoreticalDensity(_filename + "_theoretical", dist, {_hist.getMinBound(), _hist.getMaxBound()}, 100);
+            }
             printText("Данные о теоретической плотности сохранены в " + _filename + "_theoretical.csv");
         }
     }
@@ -210,4 +221,9 @@ namespace ModelingRandomValue::AdditionalFunc
         dist.setLocation(_oldLoc);
         dist.setScale(_oldScale);
     }
+
+    /// @brief Вывод значений характеристик распределения при различных параметров формы, при сдвиге = 0 и масштабе = 1
+    /// @param dist распределение
+    /// @param x0 точка, в которой берется плотность распределения
+    void valuesDistributionCharacteristicsShape(Distribution::UniformLogisticDistribution &dist, double x0 = 0.0);
 }

@@ -126,7 +126,25 @@ namespace ModelingRandomValue::AdditionalFunc
         }
     }
 
-    void saveEmpiricalDensity(const string &fileBasenameNoExtension, Data::DataSet &dataSet, Observers::Histogram &hist)
+    void saveTheoreticalByData(const string &fileBasenameNoExtension, IDistribution &dist, DataSet &dataSet) 
+    {
+        ofstream _file("output/" + fileBasenameNoExtension + ".csv");
+        if (!_file.is_open())
+        {
+            throw runtime_error("Невозможно открыть файл для записи: " + fileBasenameNoExtension + ".csv");
+        }
+
+        _file << fixed << setprecision(6);
+
+        _file << "x,theoretical_density" << endl;
+
+        for (double _x : dataSet.getData())
+        {
+            _file << _x << "," << dist.density(_x) << endl;
+        }
+    }
+
+    void saveEmpiricalDensity(const string &fileBasenameNoExtension, DataSet &dataSet, Observers::Histogram &hist)
     {
         ofstream _file("output/" + fileBasenameNoExtension + ".csv");
         if (!_file.is_open())
@@ -142,5 +160,35 @@ namespace ModelingRandomValue::AdditionalFunc
         {
             _file << _x_value << "," << hist.getEmpiricalDensity(_x_value) << endl;
         }
+    }
+
+    void valuesDistributionCharacteristicsShape(Distribution::UniformLogisticDistribution &dist, double x0)
+    {
+        double _oldLoc = dist.getLocation();
+        double _oldScale = dist.getScale();
+        double _oldShape = dist.getShape();
+
+        dist.setLocation(0.0);
+        dist.setScale(1.0);
+
+        vector<double> _shapeValues = {0.05, 0.1, 0.2, 0.3, 0.5, 1.0, 2.0};
+        ostringstream ss;
+        ss << "f(" << fixed << setprecision(1) << x0 << ')';
+
+        printText("\nЗначение характеристик распределения при различных значениях параметра формы, при сдвиге = 0 и масштабе 1\n", 0);
+        printSeparator('-', 70);
+        printStringTable<string>({{"shape", 10}, {"variance", 15}, {"skewness", 15}, {"kurtosis", 15}, {ss.str(), 15}});
+        printSeparator('-', 70);
+
+        for (double _shape : _shapeValues)
+        {
+            dist.setShape(_shape);
+            printStringTable<double>({{_shape, 10}, {dist.variance(), 15}, {dist.skewness(), 15}, {dist.kurtosis(), 15}, {dist.density(x0), 15}});
+        }
+        printSeparator('-', 70);
+
+        dist.setLocation(_oldLoc);
+        dist.setScale(_oldScale);
+        dist.setShape(_oldShape);
     }
 }

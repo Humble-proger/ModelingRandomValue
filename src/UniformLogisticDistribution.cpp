@@ -3,14 +3,20 @@
 
 namespace ModelingRandomValue::Distribution {
     
-    UniformLogisticDistribution::UniformLogisticDistribution(double loc, double s) 
+    UniformLogisticDistribution::UniformLogisticDistribution(double loc, double s, double shape) 
     : _scale(s)
     , _loc(loc)
+    , _shape(shape)
     , _uniform(0.0, 2.0)
-    , _logistic(0.0, 1.0)
+    , _logistic(0.0, shape)
     {
-        if (s <= 0.0) {
+        if (s <= 0.0)
+        {
             throw invalid_argument("Параметр масштаба должен быть положительным");
+        }
+        if (shape <= 0.0) 
+        {
+            throw invalid_argument("Параметр формы должен быть положительным");
         }
     }
 
@@ -19,10 +25,12 @@ namespace ModelingRandomValue::Distribution {
     ///        где F(u) - функция логистического распределения
     double UniformLogisticDistribution::density(double x) const 
     {
-        double _u1 = (x + 1.0) / _scale;
-        double _u2 = (x - 1.0) / _scale;
+        double _z = (x - _loc) / _scale;
+        
+        double _u1 = (_z + 1.0);
+        double _u2 = (_z - 1.0);
 
-        return 0.5 * (_logistic.cdf(_u1) - _logistic.cdf(_u2));
+        return 0.5 * (_logistic.cdf(_u1) - _logistic.cdf(_u2)) / _scale;
     }
 
     /// @note Формула:
@@ -45,7 +53,7 @@ namespace ModelingRandomValue::Distribution {
     /// @note Дисперсия: D = 1/3 + (pi^2 * s^2) / 3
     double UniformLogisticDistribution::variance() const 
     {
-        return (1.0 / 3.0) + _logistic.variance() * _scale * _scale;
+        return ((1.0 / 3.0) + _logistic.variance()) * _scale * _scale;
     }
 
     /// @note Коэффициент асимметрии равен 0 для симметричного распределения
@@ -57,31 +65,38 @@ namespace ModelingRandomValue::Distribution {
     /// @note Коэффициент эксцесса = 1.2 * (pi^2 * s^2 - 1) / (pi^2 * s^2 + 1)
     double UniformLogisticDistribution::kurtosis() const 
     {
-        double _piScaleDegree2 = M_PI * M_PI * _scale * _scale;
+        double _piShapeDegree2 = M_PI * M_PI * _shape * _shape;
+        double _denominator = (_piShapeDegree2 + 1.0);
 
-        return 1.2 * (_piScaleDegree2 - 1.0) / (_piScaleDegree2 + 1.0);
+        return 1.2 * (_piShapeDegree2 * _piShapeDegree2 - 1.0) / (_denominator * _denominator);
     }
 
     void UniformLogisticDistribution::save(ostream& out) const 
     {
-        out << _loc << ' ' << _scale;
+        out << _loc << ' ' << _scale << ' ' << _shape;
     }
 
     void UniformLogisticDistribution::load(istream& in) 
     {
         double loc;
         double s;
-        in >> loc >> s;
+        double shape;
+        in >> loc >> s >> shape;
         if (in.fail()) 
         {
             throw runtime_error("Ошибка чтения параметра из файла");
         }
         if (s <= 0.0) 
         {
-            throw runtime_error("Некорректное значение параметра в файле");
+            throw runtime_error("Некорректное значение параметра масштаба в файле");
+        }
+        if (shape <= 0.0) 
+        {
+            throw runtime_error("Некорректное значение параметра формы в файле");
         }
         _loc = loc;
         _scale = s;
+        _shape = shape;
     }
 
     void UniformLogisticDistribution::setScale(double s) 
@@ -96,5 +111,16 @@ namespace ModelingRandomValue::Distribution {
     void UniformLogisticDistribution::setLocation(double loc) 
     {
         _loc = loc;
+    }
+
+    void UniformLogisticDistribution::setShape(double shape) 
+    {
+        if (shape <= 0) 
+        {
+            throw invalid_argument("Параметр формы должен быть положительным");
+        }
+
+        _shape = shape;
+        _logistic.setScale(_shape);
     }
 };

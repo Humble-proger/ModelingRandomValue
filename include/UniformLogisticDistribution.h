@@ -24,6 +24,7 @@ namespace ModelingRandomValue::Distribution
     private:
         double _loc = 0.0;
         double _scale = 1.0;
+        double _shape = 1.0;
         UniformDistribution _uniform;
         LogisticDistribution _logistic;
 
@@ -31,8 +32,9 @@ namespace ModelingRandomValue::Distribution
         /// @brief Конструкторы класса
         /// @param loc Сдвиг сглаженного равномерного распределения
         /// @param s Масштаб сглаженного равномерного распределения
+        /// @param shape Форма сглаженного равномерного распределения
         /// @throw std::invalid_argument если s <= 0
-        explicit UniformLogisticDistribution(double loc = 0.0, double s = 1.0);
+        explicit UniformLogisticDistribution(double loc = 0.0, double s = 1.0, double shape = 1.0);
 
 // NOTE: Реализация методов IDistribution
 #pragma region IDistribution
@@ -53,6 +55,14 @@ namespace ModelingRandomValue::Distribution
         void save(ostream &out) const override;
         void load(istream &in) override;
 #pragma endregion
+
+        /// @brief Получить значение параметра формы сглаженного равномерного распределения
+        /// @return Параметр формы сглаженного равномерного распределения
+        double getShape() const { return _shape; }
+
+        /// @brief Установить значение параметра формы сглаженного равномерного распределения
+        /// @param shape Параметр формы сглаженного равномерного распределения
+        void setShape(double shape);
 
         ~UniformLogisticDistribution() = default;
     };

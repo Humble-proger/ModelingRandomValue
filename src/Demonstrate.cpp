@@ -26,21 +26,21 @@ namespace ModelingRandomValue::Demonstrate
         locScaleConverting(_logistic);
         valuesDistributionCharacteristics(_logistic);
 
-        UniformLogisticDistribution _smooth(0.0, 1.0);
+        UniformLogisticDistribution _smooth(0.0, 1.0, 1.0);
         printDist("Сглаженное равномерное (вариант 13) loc=0.0, s=1.0", _smooth, 0.0);
         locScaleConverting(_smooth);
-        valuesDistributionCharacteristics(_smooth);
+        valuesDistributionCharacteristicsShape(_smooth);
     }
 
     void demonstrateSampling()
     {
         printHeader("2. ГЕНЕРАЦИЯ ВЫБОРОК И ПРОВЕРКА СХОДИМОСТИ");
 
-        UniformLogisticDistribution _dist(3.0, 2.0);
+        UniformLogisticDistribution _dist(3.0, 2.0, 3.0);
 
         vector<int> _sizes = {10, 100, 1000, 10000, 100000};
 
-        printSubHeader("Сглаженное равномерное (вариант 13) loc=3.0 s=2.0");
+        printSubHeader("Сглаженное равномерное (вариант 13) loc=3.0 s=2.0, shape=3.0");
         printText("Теоретические характеристики");
         printValue("Среднее", _dist.mean());
         printValue("Дисперсия", _dist.variance());
@@ -158,19 +158,19 @@ namespace ModelingRandomValue::Demonstrate
     {
         printHeader("5. СРАВНЕНИЕ ТЕОРЕТИЧЕСКОЙ И ЭМПИРИЧЕСКОЙ ПЛОТНОСТИ");
 
-        UniformLogisticDistribution _uniformLogical(0.0, 1.0);
-        UniformDistribution _uniform(0.0, 1.0);
-        NormalDistribution _normal(0.0, 1.0);
+        UniformLogisticDistribution _uniformLogical(1.0, 3.0, 2.0);
+        UniformDistribution _uniform(-2.0, 5.0);
+        NormalDistribution _normal(3.0, 4.0);
 
         vector<pair<size_t, size_t>> _sizes = {{100, 7}, {1000, 20}, {10000, 40}, {10000000, 100}};
 
-        printSubHeader("Сглаженное равномерное (вариант 13) loc=0.0, s=1.0");
+        printSubHeader("Сглаженное равномерное (вариант 13) loc=1.0, s=3.0, shape=2.0");
         compareDensity("smooth", _uniformLogical, _sizes);
 
-        printSubHeader("Нормальное распределение N(0,1)");
+        printSubHeader("Нормальное распределение N(3,4)");
         compareDensity("norm", _normal, _sizes);
 
-        printSubHeader("Равномерное распределение U(0,1)");
+        printSubHeader("Равномерное распределение U(-2,5)");
         compareDensity("uniform", _uniform, _sizes);
     }
 
@@ -181,7 +181,7 @@ namespace ModelingRandomValue::Demonstrate
         UniformDistribution _uniform(2.0, 5.0);
         NormalDistribution _normal(5.0, 2.0);
         LogisticDistribution _logistic(10.0, 3.0);
-        UniformLogisticDistribution _smooth(3.1, 1.5);
+        UniformLogisticDistribution _smooth(3.1, 1.5, 2.0);
 
         printSubHeader("Сохранение распределений");
 
@@ -206,7 +206,7 @@ namespace ModelingRandomValue::Demonstrate
         {
             ofstream _file("output/smooth_dist.txt");
             _smooth.save(_file);
-            printText("Сглаженное равномерное [3.1, 1.5] сохранено в smooth_dist.txt");
+            printText("Сглаженное равномерное [3.1, 1.5, 2.0] сохранено в smooth_dist.txt");
         }
 
         printSubHeader("Загрузка распределений");
@@ -236,7 +236,7 @@ namespace ModelingRandomValue::Demonstrate
         {
             ifstream _file("output/smooth_dist.txt");
             _loadedSmooth.load(_file);
-            cout << string(2, ' ') << "Загружено сглаженное: [" << _loadedSmooth.getLocation() << ", " << _loadedSmooth.getScale() << "]" << endl;
+            cout << string(2, ' ') << "Загружено сглаженное: [" << _loadedSmooth.getLocation() << ", " << _loadedSmooth.getScale() << ", " << _loadedSmooth.getShape() << "]" << endl;
         }
     }
 
@@ -244,7 +244,7 @@ namespace ModelingRandomValue::Demonstrate
     {
         printHeader("7. ТЕСТИРОВАНИЕ ПРОИЗВОДИТЕЛЬНОСТИ");
 
-        UniformLogisticDistribution _dist(1.0);
+        UniformLogisticDistribution _dist(3.0, 5.0, 2.0);
         vector<int> _sizes = {10000, 100000, 1000000, 10000000};
 
         printSeparator('-', 47);
