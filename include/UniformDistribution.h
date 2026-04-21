@@ -47,6 +47,11 @@ namespace ModelingRandomValue::Distribution
         void load(istream &in) override;
 #pragma endregion
 
+#pragma region Вторая работа
+        IDistribution* clone() const override { return new UniformDistribution(_loc, _scale); }
+        string name() const override { return "UniformDistribution"; }
+#pragma endregion
+
         ~UniformDistribution() = default;
     };
 }

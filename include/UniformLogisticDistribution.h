@@ -56,6 +56,11 @@ namespace ModelingRandomValue::Distribution
         void load(istream &in) override;
 #pragma endregion
 
+#pragma region Вторая работа
+        IDistribution* clone() const override { return new UniformLogisticDistribution(_loc, _scale, _shape); }
+        string name() const override { return "UniformLogisticDistribution"; }
+#pragma endregion
+
         /// @brief Получить значение параметра формы сглаженного равномерного распределения
         /// @return Параметр формы сглаженного равномерного распределения
         double getShape() const { return _shape; }
