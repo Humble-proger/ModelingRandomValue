@@ -46,6 +46,11 @@ namespace ModelingRandomValue::Distribution
         void load(istream &in) override;
 #pragma endregion
 
+#pragma region Вторая работа
+        IDistribution* clone() const override { return new NormalDistribution(_mean, _stddev); }
+        string name() const override { return "NormalDistribution"; }
+#pragma endregion
+
     ~NormalDistribution() = default;
     };
 }

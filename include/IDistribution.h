@@ -9,6 +9,7 @@ namespace ModelingRandomValue::Interfaces
     interface IDistribution
     {
     public:
+#pragma region Первая работа
         /// @brief Вычисляет значение плотности распределения
         /// @param x значение случ. величины
         /// @return Плотность распределения в точке
@@ -49,6 +50,17 @@ namespace ModelingRandomValue::Interfaces
         /// @brief Установить параметр масштаба равномерного распределения
         /// @param scale Параметр масштаба равномерного распределения
         virtual void setScale(double scale) = 0;
+#pragma endregion
+
+#pragma region Вторая работа
+
+        /// @brief Создать полную копию объекта
+        virtual IDistribution *clone() const = 0;
+
+        /// @brief Получить имя класса распределения
+        virtual string name() const = 0;
+
+#pragma endregion
 
     protected:
         static default_random_engine generator;

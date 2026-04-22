@@ -46,6 +46,11 @@ namespace ModelingRandomValue::Distribution
         void load(std::istream &in) override;
 #pragma endregion
 
+#pragma region Вторая работа
+        IDistribution* clone() const override { return new LogisticDistribution(_loc, _scale); }
+        string name() const override { return "LogisticDistribution"; }
+#pragma endregion
+
         /// @brief Функция распределения логистического закона
         /// @param x аргумент
         /// @return F(x) = 1/(1 + e^(-(x-μ)/s))

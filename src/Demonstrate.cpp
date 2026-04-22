@@ -1,4 +1,6 @@
 #include "../include/Demonstrate.h"
+#include "../include/DistributionFactory.h"
+#include "../include/UniversalDistribution.h"
 
 namespace ModelingRandomValue::Demonstrate
 {
@@ -6,6 +8,8 @@ namespace ModelingRandomValue::Demonstrate
     using namespace Data;
     using namespace Observers;
     using namespace Distribution;
+    using namespace Factories;
+    using namespace Interfaces;
 
     void demonstrateDistributions()
     {
@@ -341,5 +345,250 @@ namespace ModelingRandomValue::Demonstrate
         printText("\nManualHist:");
         printHistStatistic(_manualHist);
         printText("\n(Теперь гистограммы снова одинаковы)");
+    }
+
+    void demonstrateVirtualConstructorsAndEnvelope()
+    {
+        printHeader("ДЕМОНСТРАЦИЯ ВИРТУАЛЬНЫХ КОНСТРУКТОРОВ И ИДИОМЫ");
+
+        printSubHeader("1. Регистрация типов распределений в фабрике-синглтоне");
+
+        auto &factory = DistributionFactory::instance();
+
+        factory.registerType("UniformDistribution",
+                             []() -> IDistribution *
+                             { return new UniformDistribution(); });
+        factory.registerType("NormalDistribution",
+                             []() -> IDistribution *
+                             { return new NormalDistribution(); });
+        factory.registerType("LogisticDistribution",
+                             []() -> IDistribution *
+                             { return new LogisticDistribution(); });
+        factory.registerType("UniformLogisticDistribution",
+                             []() -> IDistribution *
+                             { return new UniformLogisticDistribution(); });
+
+        printText("Зарегистрированы типы:");
+        printText("- UniformDistribution");
+        printText("- NormalDistribution");
+        printText("- LogisticDistribution");
+        printText("- UniformLogisticDistribution");
+
+        printSubHeader("2. Демонстрация clone() и name() для каждого распределения");
+
+        vector<unique_ptr<IDistribution>> originals;
+        originals.push_back(make_unique<UniformDistribution>(0.0, 2.0));
+        originals.push_back(make_unique<NormalDistribution>(5.0, 1.5));
+        originals.push_back(make_unique<LogisticDistribution>(-2.0, 0.8));
+        originals.push_back(make_unique<UniformLogisticDistribution>(3.0, 1.2));
+
+        for (const auto &dist : originals)
+        {
+            printText("Оригинал: " + dist->name());
+            printValue("location", dist->getLocation(), 6);
+            printValue("scale", dist->getScale(), 6);
+
+            printText("Клонируем...");
+            printText("Результат:");
+            unique_ptr<IDistribution> clone(dist->clone());
+            printText("Клон: " + clone->name(), 6);
+            printValue("location (клона)", clone->getLocation(), 6);
+            printValue("scale (клона)", clone->getScale(), 6);
+
+            printText("Изменяем клон...");
+            printText("Результат:");
+            clone->setLocation(clone->getLocation() + 10.0);
+            printText("После изменения клона (location += 10):", 6);
+            printValue("оригинал location", dist->getLocation(), 6);
+            printValue("клон location", clone->getLocation(), 6);
+            cout << endl;
+        }
+
+        printSubHeader("3. Создание объектов через фабрику по строковому имени");
+
+        vector<string> typeNames = {
+            "UniformDistribution",
+            "NormalDistribution",
+            "LogisticDistribution",
+            "UniformLogisticDistribution"};
+
+        for (const auto &name : typeNames)
+        {
+            printText("Создание объекта типа: " + name);
+            unique_ptr<IDistribution> dist(factory.create(name));
+
+            printText("Изменяем параметры объекта loc -> 1, scale -> 2");
+            printText("Результат:");
+            dist->setLocation(1.0);
+            dist->setScale(2.0);
+
+            printValue("location", dist->getLocation(), 6);
+            printValue("scale", dist->getScale(), 6);
+            printValue("mean", dist->mean(), 6);
+            printValue("variance", dist->variance(), 6);
+            cout << endl;
+        }
+
+        printSubHeader("4. Демонстрация класса UniversalDistribution (конверт/письмо)");
+
+        UniformDistribution uniform(2.0, 3.0);
+        UniversalDistribution envelope1(uniform);
+
+        printText("Создан конверт с UniformDistribution(2.0, 3.0)");
+        printText("name() конверта: " + envelope1.name(), 6);
+        printText("name() письма: " + envelope1.component().name(), 6);
+        printValue("location письма", envelope1.getLocation(), 6);
+        printValue("scale письма", envelope1.getScale(), 6);
+        printValue("mean()", envelope1.mean(), 6);
+        printValue("random()", envelope1.random(), 6);
+
+        printText("\nЗамена письма на NormalDistribution(0.0, 1.0)");
+        NormalDistribution normal(0.0, 1.0);
+        envelope1 = UniversalDistribution(normal);
+
+        printValue("name() письма после замены: " + envelope1.component().name(), 6);
+        printValue("location письма", envelope1.getLocation(), 6);
+        printValue("mean()", envelope1.mean(), 6);
+
+        printSubHeader("5. Предотвращение эффекта \"матрёшки\"");
+
+        // NOTE: Создаем конверт из конверта
+        UniversalDistribution envelope2(envelope1);
+        printText("Создан конверт envelope2 из envelope1 (который сам является конвертом)");
+        printText("name() envelope2: " + envelope2.name(), 6);
+        printText("name() письма envelope2: " + envelope2.component().name(), 6);
+        printText("(Если бы не было защиты, получился бы конверт внутри конверта)", 6);
+
+        printSubHeader("6. Сохранение и загрузка UniversalDistribution");
+
+        UniformLogisticDistribution smooth(3.1, 1.5);
+        UniversalDistribution original(smooth);
+
+        printText("Оригинальный конверт с UniformLogisticDistribution(3.1, 1.5)");
+        printValue("location", original.getLocation(), 6);
+        printValue("scale", original.getScale(), 6);
+
+        {
+            ofstream file("output/universal_dist_demo.txt");
+            if (!file.is_open())
+            {
+                printText("Ошибка: не удалось открыть файл для записи");
+            }
+            else
+            {
+                original.save(file);
+                printText("Объект сохранён в output/universal_dist_demo.txt");
+            }
+        }
+
+        UniversalDistribution loaded;
+        {
+            ifstream file("output/universal_dist_demo.txt");
+            if (!file.is_open())
+            {
+                printText("Ошибка: не удалось открыть файл для чтения");
+            }
+            else
+            {
+                loaded.load(file);
+                printText("Объект загружен из файла");
+            }
+        }
+
+        printText("\nСравнение оригинала и загруженного объекта:");
+        printValue("Оригинал location", original.getLocation(), 6);
+        printValue("Загруженный location", loaded.getLocation(), 6);
+        printValue("Оригинал scale", original.getScale(), 6);
+        printValue("Загруженный scale", loaded.getScale(), 6);
+        printValue("Оригинал mean()", original.mean(), 6);
+        printValue("Загруженный mean()", loaded.mean(), 6);
+        printText("Тип письма оригинала: " + original.component().name(), 6);
+        printText("Тип письма загруженного: " + loaded.component().name(), 6);
+
+        printSubHeader("7. Сравнение производительности");
+
+        const int N = 1000000;
+        UniformLogisticDistribution directDist(0.0, 1.0);
+        UniversalDistribution envelopeDist(directDist);
+
+        double timeDirect = measureTime([&]()
+                                        {
+        double sum = 0.0;
+        for (int i = 0; i < N; ++i) {
+            sum += directDist.random();
+        } });
+
+        double timeEnvelope = measureTime([&]()
+                                          {
+        double sum = 0.0;
+        for (int i = 0; i < N; ++i) {
+            sum += envelopeDist.random();
+        } });
+
+        printText("Генерация " + to_string(N) + " случайных чисел:");
+        printValue("Прямой вызов (мс)", timeDirect, 6);
+        printValue("Через конверт (мс)", timeEnvelope, 6);
+        printValue("Накладные расходы (%)", (timeEnvelope / timeDirect - 1.0) * 100.0, 6);
+
+        printSubHeader("8. Полиморфный контейнер с UniversalDistribution");
+
+        vector<UniversalDistribution> container;
+
+        container.emplace_back(UniformDistribution(-1.0, 2.0));
+        container.emplace_back(NormalDistribution(0.0, 1.0));
+        container.emplace_back(LogisticDistribution(2.0, 0.5));
+        container.emplace_back(UniformLogisticDistribution(1.0, 1.5));
+
+        printText("Контейнер содержит объекты разных типов распределений:");
+        printSeparator('-', 60);
+        printStringTable<string>({{"Тип", 30}, {"location", 12}, {"scale", 10}, {"mean", 12}});
+        printSeparator('-', 60);
+
+        for (size_t i = 0; i < container.size(); ++i)
+        {
+            const auto &item = container[i];
+            printStringTable<string>({{item.component().name(), 30},
+                                      {to_string(item.getLocation()).substr(0, 8), 12},
+                                      {to_string(item.getScale()).substr(0, 8), 10},
+                                      {to_string(item.mean()).substr(0, 10), 12}});
+        }
+        printSeparator('-', 60);
+
+        printText("\nСохранение всего контейнера в файл container_demo.txt");
+        {
+            ofstream file("output/container_demo.txt");
+            file << container.size() << endl;
+            for (const auto &item : container)
+            {
+                item.save(file);
+            }
+            printText("Контейнер сохранён");
+        }
+
+        printText("\nЗагрузка контейнера из файла:");
+        {
+            ifstream file("output/container_demo.txt");
+            size_t count;
+            file >> count;
+            file.ignore(); // NOTE: Пропускаем перевод строки
+
+            vector<UniversalDistribution> loadedContainer;
+            for (size_t i = 0; i < count; ++i)
+            {
+                loadedContainer.emplace_back(file);
+            }
+
+            printText("Загруженные объекты:");
+            printSeparator('-', 60);
+            printStringTable<string>({{"Тип", 30}, {"location", 12}, {"scale", 10}});
+            printSeparator('-', 60);
+            for (const auto &item : loadedContainer)
+            {
+                printStringTable<string>({{item.component().name(), 30},
+                                          {to_string(item.getLocation()).substr(0, 8), 12},
+                                          {to_string(item.getScale()).substr(0, 8), 10}});
+            }
+            printSeparator('-', 60);
+        }
     }
 }
