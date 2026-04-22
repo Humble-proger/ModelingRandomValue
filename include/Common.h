@@ -14,5 +14,6 @@
 #include <sstream>
 #include <type_traits>
 #include <initializer_list>
+#include <string>
 
 using namespace std;

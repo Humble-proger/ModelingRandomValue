@@ -41,7 +41,12 @@
 *.dwo
 
 .DS_Store
-.devcontainer/
-.vscode/
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+
+.devcontainer/*
+!.devcontainer/devcontainer.json
+
 build/
 output/

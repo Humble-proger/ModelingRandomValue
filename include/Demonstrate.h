@@ -32,4 +32,7 @@ namespace ModelingRandomValue::Demonstrate
 
     /// @brief Демонстрация паттерна Наблюдатель на примере гистограммы
     void demonstrateHistogramObserver();
+
+    /// @brief Демонстрация нового функционала второй работы
+    void demonstrateVirtualConstructorsAndEnvelope();
 }
