@@ -99,3 +99,17 @@ namespace ModelingRandomValue::Distribution
         _loc = loc;
     }
 }
+
+#include "../include/DistributionFactory.h"
+
+namespace 
+{
+    using namespace ModelingRandomValue;
+
+    Interfaces::IDistribution* CreateLogisticDistribution() 
+    {
+        return new Distribution::LogisticDistribution();
+    }
+
+    const bool registered = Factories::DistributionFactory::instance()->registerDistribution("LogisticDistribution", CreateLogisticDistribution);
+}

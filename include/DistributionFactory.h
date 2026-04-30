@@ -14,35 +14,31 @@ namespace ModelingRandomValue::Factories
         using Creator = std::function<Interfaces::IDistribution *()>;
 
         /// @brief Экземпляр класса
-        static DistributionFactory &instance()
-        {
-            static DistributionFactory factory;
-            return factory;
-        }
+        static DistributionFactory* instance();
 
-        /// @brief Зарегистрировать тип создаваемого объекта
-        /// @param name Имя создаваемого распределения
+        /// @brief Зарегистрировать распределение
+        /// @param distId Идентификатор распределения
         /// @param creator Функция создающая распределение
-        void registerType(const std::string &name, Creator creator)
-        {
-            _creators[name] = creator;
-        }
+        /// @return Получилось ли зарегистрировать распределение
+        bool registerDistribution(const std::string &distId, Creator creator);
+
+        /// @brief Удалить распределение
+        /// @param distId Идентификатор распределения
+        /// @return Получилось ли удалить распределение
+        bool unregisterDistribution(const std::string& distId);
 
         /// @brief Создать объект по имени
         /// @param name Имя создаваемого распределения / Идентификатор распределения
         /// @return Экземпляр распределения
-        Interfaces::IDistribution *create(const std::string &name) const
-        {
-            auto it = _creators.find(name);
-            if (it != _creators.end())
-            {
-                return it->second();
-            }
-            throw std::runtime_error("Unknown distribution type: " + name);
-        }
+        Interfaces::IDistribution *createDist(const std::string &name);
 
     private:
+        using CallbackMap = std::map<std::string, Creator>;
+        CallbackMap callbacks;
+    
         DistributionFactory() = default;
-        std::map<std::string, Creator> _creators;
+        DistributionFactory(const DistributionFactory&) = delete;
+        DistributionFactory& operator=(const DistributionFactory&) = delete;
+        ~DistributionFactory() = default;
     };
 }
