@@ -87,3 +87,17 @@ namespace ModelingRandomValue::Distribution
         _uniform = uniform_real_distribution<double>(_loc - _scaleDiv2, _loc + _scaleDiv2);
     }
 }
+
+#include "../include/DistributionFactory.h"
+
+namespace 
+{
+    using namespace ModelingRandomValue;
+
+    Interfaces::IDistribution* CreateUniformDistribution() 
+    {
+        return new Distribution::UniformDistribution();
+    }
+
+    const bool registered = Factories::DistributionFactory::instance()->registerDistribution("UniformDistribution", CreateUniformDistribution);
+}

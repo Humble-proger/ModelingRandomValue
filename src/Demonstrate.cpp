@@ -350,31 +350,8 @@ namespace ModelingRandomValue::Demonstrate
     void demonstrateVirtualConstructorsAndEnvelope()
     {
         printHeader("ДЕМОНСТРАЦИЯ ВИРТУАЛЬНЫХ КОНСТРУКТОРОВ И ИДИОМЫ");
-
-        printSubHeader("1. Регистрация типов распределений в фабрике-синглтоне");
-
-        auto &factory = DistributionFactory::instance();
-
-        factory.registerType("UniformDistribution",
-                             []() -> IDistribution *
-                             { return new UniformDistribution(); });
-        factory.registerType("NormalDistribution",
-                             []() -> IDistribution *
-                             { return new NormalDistribution(); });
-        factory.registerType("LogisticDistribution",
-                             []() -> IDistribution *
-                             { return new LogisticDistribution(); });
-        factory.registerType("UniformLogisticDistribution",
-                             []() -> IDistribution *
-                             { return new UniformLogisticDistribution(); });
-
-        printText("Зарегистрированы типы:");
-        printText("- UniformDistribution");
-        printText("- NormalDistribution");
-        printText("- LogisticDistribution");
-        printText("- UniformLogisticDistribution");
-
-        printSubHeader("2. Демонстрация clone() и name() для каждого распределения");
+        
+        printSubHeader("1. Демонстрация clone() и name() для каждого распределения");
 
         vector<unique_ptr<IDistribution>> originals;
         originals.push_back(make_unique<UniformDistribution>(0.0, 2.0));
@@ -404,7 +381,7 @@ namespace ModelingRandomValue::Demonstrate
             cout << endl;
         }
 
-        printSubHeader("3. Создание объектов через фабрику по строковому имени");
+        printSubHeader("2. Создание объектов через фабрику по строковому имени");
 
         vector<string> typeNames = {
             "UniformDistribution",
@@ -415,7 +392,7 @@ namespace ModelingRandomValue::Demonstrate
         for (const auto &name : typeNames)
         {
             printText("Создание объекта типа: " + name);
-            unique_ptr<IDistribution> dist(factory.create(name));
+            unique_ptr<IDistribution> dist(DistributionFactory::instance()->createDist(name));
 
             printText("Изменяем параметры объекта loc -> 1, scale -> 2");
             printText("Результат:");
@@ -429,7 +406,7 @@ namespace ModelingRandomValue::Demonstrate
             cout << endl;
         }
 
-        printSubHeader("4. Демонстрация класса UniversalDistribution (конверт/письмо)");
+        printSubHeader("3. Демонстрация класса UniversalDistribution (конверт/письмо)");
 
         UniformDistribution uniform(2.0, 3.0);
         UniversalDistribution envelope1(uniform);
@@ -450,7 +427,7 @@ namespace ModelingRandomValue::Demonstrate
         printValue("location письма", envelope1.getLocation(), 6);
         printValue("mean()", envelope1.mean(), 6);
 
-        printSubHeader("5. Предотвращение эффекта \"матрёшки\"");
+        printSubHeader("4. Предотвращение эффекта \"матрёшки\"");
 
         // NOTE: Создаем конверт из конверта
         UniversalDistribution envelope2(envelope1);
@@ -459,7 +436,7 @@ namespace ModelingRandomValue::Demonstrate
         printText("name() письма envelope2: " + envelope2.component().name(), 6);
         printText("(Если бы не было защиты, получился бы конверт внутри конверта)", 6);
 
-        printSubHeader("6. Сохранение и загрузка UniversalDistribution");
+        printSubHeader("5. Сохранение и загрузка UniversalDistribution");
 
         UniformLogisticDistribution smooth(3.1, 1.5);
         UniversalDistribution original(smooth);
@@ -505,7 +482,7 @@ namespace ModelingRandomValue::Demonstrate
         printText("Тип письма оригинала: " + original.component().name(), 6);
         printText("Тип письма загруженного: " + loaded.component().name(), 6);
 
-        printSubHeader("7. Сравнение производительности");
+        printSubHeader("6. Сравнение производительности");
 
         const int N = 1000000;
         UniformLogisticDistribution directDist(0.0, 1.0);
@@ -530,7 +507,7 @@ namespace ModelingRandomValue::Demonstrate
         printValue("Через конверт (мс)", timeEnvelope, 6);
         printValue("Накладные расходы (%)", (timeEnvelope / timeDirect - 1.0) * 100.0, 6);
 
-        printSubHeader("8. Полиморфный контейнер с UniversalDistribution");
+        printSubHeader("7. Полиморфный контейнер с UniversalDistribution");
 
         vector<UniversalDistribution> container;
 

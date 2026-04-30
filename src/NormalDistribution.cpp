@@ -82,4 +82,18 @@ namespace ModelingRandomValue::Distribution
         _mean = loc;
         _normal = normal_distribution<double>(loc, _stddev);
     }
-} 
+}
+
+#include "../include/DistributionFactory.h"
+
+namespace 
+{
+    using namespace ModelingRandomValue;
+
+    Interfaces::IDistribution* CreateNormalDistribution() 
+    {
+        return new Distribution::NormalDistribution();
+    }
+
+    const bool registered = Factories::DistributionFactory::instance()->registerDistribution("NormalDistribution", CreateNormalDistribution);
+}

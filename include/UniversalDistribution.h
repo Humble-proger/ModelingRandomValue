@@ -137,7 +137,7 @@ namespace ModelingRandomValue::Distribution
             delete _letter;
             std::string typeName;
             in >> typeName;
-            _letter = Factories::DistributionFactory::instance().create(typeName);
+            _letter = Factories::DistributionFactory::instance()->createDist(typeName);
             dynamic_cast<IPersistent *>(_letter)->load(in);
         }
 #pragma endregion

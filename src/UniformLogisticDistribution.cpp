@@ -123,4 +123,18 @@ namespace ModelingRandomValue::Distribution {
         _shape = shape;
         _logistic.setScale(_shape);
     }
-};
+}
+
+#include "../include/DistributionFactory.h"
+
+namespace 
+{
+    using namespace ModelingRandomValue;
+
+    Interfaces::IDistribution* CreateUniformLogisticDistribution() 
+    {
+        return new Distribution::UniformLogisticDistribution();
+    }
+
+    const bool registered = Factories::DistributionFactory::instance()->registerDistribution("UniformLogisticDistribution", CreateUniformLogisticDistribution);
+}
