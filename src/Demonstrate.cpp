@@ -350,8 +350,6 @@ namespace ModelingRandomValue::Demonstrate
     void demonstrateVirtualConstructorsAndEnvelope()
     {
         printHeader("ДЕМОНСТРАЦИЯ ВИРТУАЛЬНЫХ КОНСТРУКТОРОВ И ИДИОМЫ");
-
-        DistributionFactory* factory = DistributionFactory::instance();
         
         printSubHeader("1. Демонстрация clone() и name() для каждого распределения");
 
@@ -394,7 +392,7 @@ namespace ModelingRandomValue::Demonstrate
         for (const auto &name : typeNames)
         {
             printText("Создание объекта типа: " + name);
-            unique_ptr<IDistribution> dist(factory->createDist(name));
+            unique_ptr<IDistribution> dist(DistributionFactory::instance()->createDist(name));
 
             printText("Изменяем параметры объекта loc -> 1, scale -> 2");
             printText("Результат:");
