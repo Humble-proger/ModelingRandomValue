@@ -14,6 +14,7 @@ int main()
     // demonstratePersistence();
     // demonstratePerformance();
     // demonstrateHistogramObserver();
-    demonstrateVirtualConstructorsAndEnvelope();
+    // demonstrateVirtualConstructorsAndEnvelope();
+    demonstrateMixtureApproximation();
     return 0;
 }

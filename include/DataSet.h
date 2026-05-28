@@ -14,6 +14,7 @@ namespace ModelingRandomValue::Data
     private:
         vector<double> _data;
         list<Interfaces::IObserver *> _observers;
+        list<Interfaces::IObserver *> _batchObservers;
 
         // NOTE: Флаги для кэширования (для оптимизации)
         mutable bool _cacheValid = false;
@@ -51,14 +52,17 @@ namespace ModelingRandomValue::Data
 
         /// @brief Добавить наблюдателя
         /// @param observer указатель на наблюдателя
-        void attach(Interfaces::IObserver *observer);
+        void attach(Interfaces::IObserver *observer, bool batch = false);
 
         /// @brief Удалить наблюдателя
         /// @param observer указатель на наблюдателя
-        void detach(Interfaces::IObserver *observer);
+        void detach(Interfaces::IObserver *observer, bool batch = false);
 
         /// @brief Уведомить всех наблюдателей об изменении
         void notify();
+
+        /// @brief Уведомление batch-наблюдателей
+        void notifyBatch();
 
 #pragma endregion
 

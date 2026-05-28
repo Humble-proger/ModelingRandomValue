@@ -6,21 +6,17 @@ namespace ModelingRandomValue::Data
 
     DataSet::DataSet() {}
 
-    DataSet::DataSet(const vector<double>& initialData) : _data(initialData) {}
+    DataSet::DataSet(const vector<double> &initialData) : _data(initialData) {}
 
-    DataSet::DataSet(const DataSet& other)
-    : _data(other._data)
-    , _cacheValid(other._cacheValid)
-    , _cachedMin(other._cachedMin)
-    , _cachedMax(other._cachedMax)
-    , _cachedMean(other._cachedMean)
-    , _cachedVariance(other._cachedVariance)
-    , _cachedSkewness(other._cachedSkewness)
-    , _cachedKurtosis(other._cachedKurtosis) {}
+    DataSet::DataSet(const DataSet &other)
+        : _data(other._data), _cacheValid(other._cacheValid), _cachedMin(other._cachedMin), _cachedMax(other._cachedMax), _cachedMean(other._cachedMean), _cachedVariance(other._cachedVariance), _cachedSkewness(other._cachedSkewness), _cachedKurtosis(other._cachedKurtosis) {}
 
-    void DataSet::updateCache() const 
+    void DataSet::updateCache() const
     {
-        if (_cacheValid || _data.empty()) { return; }
+        if (_cacheValid || _data.empty())
+        {
+            return;
+        }
 
         _cacheValid = true;
         size_t _n = _data.size();
@@ -30,21 +26,30 @@ namespace ModelingRandomValue::Data
 
         double _sum = 0.0;
 
-        for (double _x : _data) 
+        for (double _x : _data)
         {
             _sum += _x;
 
-            if (_x < _cachedMin) { _cachedMin = _x; }
-            if (_x > _cachedMax) { _cachedMax = _x; }
+            if (_x < _cachedMin)
+            {
+                _cachedMin = _x;
+            }
+            if (_x > _cachedMax)
+            {
+                _cachedMax = _x;
+            }
         }
 
         _cachedMean = _sum / _n;
 
-        if (_n < 2) { return; }
+        if (_n < 2)
+        {
+            return;
+        }
 
         double _sumSq = 0.0, _sumCube = 0.0, _sumFourth = 0.0;
 
-        for (double _x : _data) 
+        for (double _x : _data)
         {
             double _dev = _x - _cachedMean;
             double _devSq = _dev * _dev;
@@ -56,51 +61,69 @@ namespace ModelingRandomValue::Data
 
         _cachedVariance = _sumSq / (_n - 1);
 
-        if (_n < 3) { return; }
+        if (_n < 3)
+        {
+            return;
+        }
 
         double _s3 = sqrt(_cachedVariance) * _cachedVariance;
         _cachedSkewness = (_sumCube / _n) / _s3;
 
-        if (_n < 4) { return; }
+        if (_n < 4)
+        {
+            return;
+        }
 
         double _varSq = _cachedVariance * _cachedVariance;
         _cachedKurtosis = (_sumFourth / _n) / _varSq - 3.0;
     }
 
-    void DataSet::attach(IObserver* observer) 
+    void DataSet::attach(IObserver *observer, bool batch)
     {
-        if (observer) 
-        {
+        if (!observer)
+            return;
+        if (batch)
+            _batchObservers.push_back(observer);
+        else
             _observers.push_back(observer);
-        }
     }
 
-    void DataSet::detach(IObserver* observer) 
+    void DataSet::detach(IObserver *observer, bool batch)
     {
-        _observers.remove(observer);
+        if (batch)
+            _batchObservers.remove(observer);
+        else
+            _observers.remove(observer);
     }
 
-    void DataSet::notify() 
+    void DataSet::notify()
     {
-        for (IObserver* _observer : _observers) 
+        for (IObserver *_observer : _observers)
         {
-            if (_observer) 
+            if (_observer)
             {
                 _observer->update();
             }
         }
     }
 
-    void DataSet::add(double value) 
+    void DataSet::notifyBatch()
+    {
+        for (auto *obs : _batchObservers)
+            if (obs)
+                obs->update();
+    }
+
+    void DataSet::add(double value)
     {
         _data.push_back(value);
         invalidateCache();
         notify();
     }
 
-    void DataSet::insert(size_t index, double value) 
+    void DataSet::insert(size_t index, double value)
     {
-        if (index > _data.size()) 
+        if (index > _data.size())
         {
             throw out_of_range("Индекс вставки вне диапазона");
         }
@@ -110,9 +133,9 @@ namespace ModelingRandomValue::Data
         notify();
     }
 
-    void DataSet::remove(size_t index) 
+    void DataSet::remove(size_t index)
     {
-        if (index >- _data.size()) 
+        if (index > -_data.size())
         {
             throw out_of_range("Индекс удаления вне диапазона");
         }
@@ -122,14 +145,14 @@ namespace ModelingRandomValue::Data
         notify();
     }
 
-    void DataSet::set(size_t index, double value) 
+    void DataSet::set(size_t index, double value)
     {
-        if (index >= _data.size()) 
+        if (index >= _data.size())
         {
             throw out_of_range("Индекс вне диапазона");
         }
 
-        if (_data[index] != value) 
+        if (_data[index] != value)
         {
             _data[index] = value;
             invalidateCache();
@@ -139,40 +162,43 @@ namespace ModelingRandomValue::Data
 
     double DataSet::get(size_t index) const
     {
-        if (index >= _data.size()) 
+        if (index >= _data.size())
         {
             throw out_of_range("Индекс вне диапазона");
         }
         return _data[index];
     }
 
-    void DataSet::clear() 
+    void DataSet::clear()
     {
-        if (_data.empty()) { return; }
+        if (_data.empty())
+        {
+            return;
+        }
 
         _data.clear();
         invalidateCache();
         notify();
     }
 
-    size_t DataSet::size() const 
+    size_t DataSet::size() const
     {
         return _data.size();
     }
 
-    bool DataSet::isEmpty() const 
+    bool DataSet::isEmpty() const
     {
         return _data.empty();
     }
 
-    const vector<double>& DataSet::getData() const 
+    const vector<double> &DataSet::getData() const
     {
         return _data;
     }
 
     double DataSet::min() const
     {
-        if (_data.empty()) 
+        if (_data.empty())
         {
             throw runtime_error("Невозможно вычислить минимум: у пустой выборки");
         }
@@ -183,7 +209,7 @@ namespace ModelingRandomValue::Data
 
     double DataSet::max() const
     {
-        if (_data.empty()) 
+        if (_data.empty())
         {
             throw runtime_error("Невозможно вычислить максимум: у пустой выборки");
         }
@@ -194,7 +220,7 @@ namespace ModelingRandomValue::Data
 
     double DataSet::mean() const
     {
-        if (_data.empty()) 
+        if (_data.empty())
         {
             throw runtime_error("Невозможно вычислить среднее: у пустой выборки");
         }
@@ -205,7 +231,7 @@ namespace ModelingRandomValue::Data
 
     double DataSet::variance() const
     {
-        if (_data.size() < 2) 
+        if (_data.size() < 2)
         {
             throw runtime_error("Невозможно вычислить дисперсию: недостаточно элементов (нужно >= 2)");
         }
@@ -219,9 +245,9 @@ namespace ModelingRandomValue::Data
         return sqrt(variance());
     }
 
-    double DataSet::skewness() const 
+    double DataSet::skewness() const
     {
-        if (_data.size() < 3) 
+        if (_data.size() < 3)
         {
             throw runtime_error("Невозможно вычислить асимметрию: недостаточно элементов (нужно >= 3)");
         }
@@ -230,9 +256,9 @@ namespace ModelingRandomValue::Data
         return _cachedSkewness;
     }
 
-    double DataSet::kurtosis() const 
+    double DataSet::kurtosis() const
     {
-        if (_data.size() < 4) 
+        if (_data.size() < 4)
         {
             throw runtime_error("Невозможно вычислить эксцесс: недостаточно элементов (нужно >= 4)");
         }
