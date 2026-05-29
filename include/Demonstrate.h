@@ -35,4 +35,7 @@ namespace ModelingRandomValue::Demonstrate
 
     /// @brief Демонстрация нового функционала второй работы
     void demonstrateVirtualConstructorsAndEnvelope();
+
+    /// @brief Демонстрация универсального апроксиматора и многослойных смесей
+    void demonstrateMixtureApproximation();
 }
