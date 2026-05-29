@@ -191,4 +191,16 @@ namespace ModelingRandomValue::AdditionalFunc
         dist.setScale(_oldScale);
         dist.setShape(_oldShape);
     }
+
+    void saveComponentDensity(const string &fileBasenameNoExtension, Distribution::UniversalDistribution &comp,
+                              pair<double, double> bounds, size_t n)
+    {
+        ofstream file("output/" + fileBasenameNoExtension + ".csv");
+        double step = (bounds.second - bounds.first) / (n - 1);
+        file << "x,density" << endl;
+        for (double x = bounds.first; x <= bounds.second; x += step)
+        {
+            file << x << "," << comp.density(x) << endl;
+        }
+    }
 }

@@ -5,6 +5,7 @@
 #include "DataSet.h"
 #include "Histogram.h"
 #include "UniformLogisticDistribution.h"
+#include "UniversalDistribution.h"
 
 namespace ModelingRandomValue::AdditionalFunc
 {
@@ -107,6 +108,14 @@ namespace ModelingRandomValue::AdditionalFunc
     /// @param dist распределение
     /// @param dataSet выборка
     void saveTheoreticalByData(const string &fileBasenameNoExtension, Interfaces::IDistribution &dist, Data::DataSet &dataSet);
+
+    /// @brief Вспомогательная функция для сохранения плотности компоненты
+    /// @param fileBasenameNoExtension Имя файла без расширения
+    /// @param comp компонента смеси
+    /// @param bounds пара границ (левая граница, правая граница)
+    /// @param n количество разбиений
+    void saveComponentDensity(const string &fileBasenameNoExtension, Distribution::UniversalDistribution &comp,
+                              pair<double, double> bounds, size_t n);
 
     /// @brief Сравнение эмпирической плотности с теоретической
     /// @tparam Dist распределение, которое наследовано от IDistribution

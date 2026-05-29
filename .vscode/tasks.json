@@ -31,6 +31,7 @@
                 "-fdiagnostics-color=always",
                 "-g",
                 "${fileDirname}/src/*.cpp",
+                "${fileDirname}/src/*.c",
                 "${fileDirname}/${fileBasename}",
                 "-Iinclude",
                 "-o",

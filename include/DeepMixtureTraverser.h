@@ -22,21 +22,27 @@ namespace ModelingRandomValue::Iterators
         {
             for (it.first(); !it.isDone(); it.next())
             {
-                auto &comp = it.currentItem().first;
-                double w = it.currentItem().second;
-                // NOTE: проверяем, является ли компонента смесью
+                auto item = it.currentItem();
+                Distribution::UniversalDistribution &comp = item.first;
+                double w = item.second;
 
-                Distribution::Mixture *subMix = dynamic_cast<Distribution::Mixture *>(&comp.component());
+                Interfaces::IDistribution *inner = &comp.component();
+
+                Distribution::Mixture *subMix = dynamic_cast<Distribution::Mixture *>(inner);
                 if (subMix)
                 {
                     ShallowMixtureIterator subIt(*subMix);
                     execute(subIt, prob * w);
                 }
-                else if (_process)
+                else
                 {
-                    _result = _process(comp, prob * w);
-                    if (!_result)
-                        return;
+                    // NOTE: Это лист – вызываем пользовательскую функцию
+                    if (_process)
+                    {
+                        _result = _process(comp, prob * w);
+                        if (!_result)
+                            return;
+                    }
                 }
             }
         }
@@ -60,7 +66,9 @@ namespace ModelingRandomValue::Iterators
         bool traverse()
         {
             if (!_process)
+            {
                 throw std::runtime_error("process function not set");
+            }
             _result = true;
             ShallowMixtureIterator it(_mix);
             execute(it, 1.0);

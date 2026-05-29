@@ -95,4 +95,4 @@ namespace ModelingRandomValue::Distribution
 #pragma endregion
     };
 
-} // namespace
+}

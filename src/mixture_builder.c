@@ -34,8 +34,11 @@ static int em_normal_mixture(const double* data, int n, int k,
     }
 
     double prevLL = -1e100;
+    // NOTE: Ограничиваем количество итераций алгоритма до 200
     for (iter = 0; iter < 200; ++iter) {
-        // NOTE: E-step
+        // NOTE: E-step используем формулу Байеса 
+        // для вычисления апостериорной вероятности (Лекция ч4 -> 5 формула)
+        // Получаем вероятность того, что наблюдение i было сгенерировано j компонентой
         double totalLL = 0.0;
         for (i = 0; i < n; ++i) {
             double sum = 0.0;
@@ -44,11 +47,14 @@ static int em_normal_mixture(const double* data, int n, int k,
                 gamma[i * k + j] = p;
                 sum += p;
             }
+            // NOTE: Защита от нуля (вырожденный случай, знаменатель равен 0)
             if (sum < 1e-300) sum = 1e-300;
             totalLL += log(sum);
             for (j = 0; j < k; ++j) gamma[i * k + j] /= sum;
         }
-        // NOTE: M-step
+        // NOTE: M-step обновляем параметры каждой компоненты используя формулу Лагранжа
+        // с использованием вероятности полученной на шаге E-step (Лекция ч4 -> под 5 формулой)
+        // обновление среднего и дисперсии (Лекция ч4 -> 10 стр)
         for (j = 0; j < k; ++j) {
             double sum_gamma = 0.0, sum_x = 0.0, sum_x2 = 0.0;
             for (i = 0; i < n; ++i) {
@@ -57,13 +63,17 @@ static int em_normal_mixture(const double* data, int n, int k,
                 sum_x += g * data[i];
                 sum_x2 += g * data[i] * data[i];
             }
+            // NOTE: Защита от деления на 0
             if (sum_gamma < 1e-10) sum_gamma = 1e-10;
+            
+            // NOTE: Обновление компонент
             weights[j] = sum_gamma / n;
             means[j] = sum_x / sum_gamma;
             double var = sum_x2 / sum_gamma - means[j] * means[j];
             if (var < 1e-6) var = 1e-6;
             stddevs[j] = sqrt(var);
         }
+        // NOTE: Проверка сходимости
         if (fabs(totalLL - prevLL) < 1e-6) break;
         prevLL = totalLL;
     }
@@ -83,8 +93,14 @@ static int em_robust_mixture(const double* data, int n, int k,
     }
     double range = max - min;
     if (range < 1e-10) range = 1.0;
+    if (min == max) {
+        min -= 0.5;
+        max += 0.5;
+        range = max - min;
+    }
 
-    int total_comps = k + 1; // k нормальных + 1 равномерная
+    // NOTE: Количество компонент: k нормальных + 1 равномерная
+    int total_comps = k + 1;
     double* gamma = (double*)malloc(n * total_comps * sizeof(double));
     if (!gamma) return -1;
 
@@ -97,7 +113,10 @@ static int em_robust_mixture(const double* data, int n, int k,
     *uniformWeight = 0.1;
 
     double prevLL = -1e100;
-    for (int iter = 0; iter < 200; ++iter) {
+    // NOTE: Ограничиваем количество итераций алгоритма до 200
+    for (int iter = 0; iter < 500; ++iter) {
+        // NOTE: E-step вычисляется аналогично смеси нормальным, 
+        // только с добавленной равномерной компонентой
         double totalLL = 0.0;
         for (int i = 0; i < n; ++i) {
             double sum = 0.0;
@@ -106,15 +125,20 @@ static int em_robust_mixture(const double* data, int n, int k,
                 gamma[i * total_comps + j] = p;
                 sum += p;
             }
+            // NOTE: Добавляем равномерную компоненту
             double p_unif = (*uniformWeight) * uniform_pdf(data[i], min, max);
             gamma[i * total_comps + k] = p_unif;
             sum += p_unif;
+            
+            // NOTE: Защита от нуля (вырожденный случай, знаменатель равен 0)
             if (sum < 1e-300) sum = 1e-300;
+            
             totalLL += log(sum);
             for (int j = 0; j < total_comps; ++j)
                 gamma[i * total_comps + j] /= sum;
         }
-        // NOTE: M-step для нормальных компонент
+        // NOTE: M-step для нормальных компонент, 
+        // считается также как для смеси из нормальных
         for (int j = 0; j < k; ++j) {
             double sum_gamma = 0.0, sum_x = 0.0, sum_x2 = 0.0;
             for (int i = 0; i < n; ++i) {
@@ -123,6 +147,8 @@ static int em_robust_mixture(const double* data, int n, int k,
                 sum_x += g * data[i];
                 sum_x2 += g * data[i] * data[i];
             }
+
+            // NOTE: Защита от деления на 0
             if (sum_gamma < 1e-10) sum_gamma = 1e-10;
             weights[j] = sum_gamma / n;
             means[j] = sum_x / sum_gamma;
@@ -130,12 +156,25 @@ static int em_robust_mixture(const double* data, int n, int k,
             if (var < 1e-6) var = 1e-6;
             stddevs[j] = sqrt(var);
         }
-        // NOTE: M-step для равномерной компоненты
+        // NOTE: M-step для равномерной компоненты, 
+        // обновляет вес для равномерной компоненты (Лекция ч4 -> стр 18)
         double sum_gamma_unif = 0.0;
         for (int i = 0; i < n; ++i)
             sum_gamma_unif += gamma[i * total_comps + k];
         *uniformWeight = sum_gamma_unif / n;
 
+        double sum_norm_weights = 0.0;
+        for (int j = 0; j < k; ++j) {
+            sum_norm_weights += weights[j];
+        }
+        if (sum_norm_weights > 1e-10 && sum_norm_weights < 0.999) {
+            // Пересчитываем, чтобы сумма стала 1
+            for (int j = 0; j < k; ++j) {
+                weights[j] /= sum_norm_weights;
+            }
+        }
+
+        // NOTE: Проверка сходимости
         if (fabs(totalLL - prevLL) < 1e-6) break;
         prevLL = totalLL;
     }
@@ -174,7 +213,7 @@ int buildMixture(const double* data, int n, int maxK, int robust, MixtureParams*
             double unifWeight;
             err = em_robust_mixture(data, n, k, weights, means, stddevs, &unifWeight, &logLik);
             if (err == 0) {
-                // число параметров: для k нормальных: 3k (веса, средние, сигмы) минус 1 связь весов (сумма=1) + 1 вес равномерной = 3k
+                // NOTE: число параметров: для k нормальных: 3k (веса, средние, сигмы) минус 1 связь весов (сумма=1) + 1 вес равномерной = 3k
                 int nParams = 3 * k;
                 double bic_val = bic(logLik, n, nParams);
                 if (bic_val < bestBIC) {
@@ -188,14 +227,14 @@ int buildMixture(const double* data, int n, int maxK, int robust, MixtureParams*
                     bestStddevs = stddevs;
                     bestUnifWeight = unifWeight;
                     bestParamsCount = nParams;
-                    // чтобы не освобождать сейчас
                     weights = means = stddevs = NULL;
                 }
             }
         } else {
             err = em_normal_mixture(data, n, k, weights, means, stddevs, &logLik);
             if (err == 0) {
-                int nParams = 3 * k - 1; // k весов (сумма=1) + k средних + k дисперсий
+                // NOTE: k весов (сумма=1) + k средних + k дисперсий
+                int nParams = 3 * k - 1;
                 double bic_val = bic(logLik, n, nParams);
                 if (bic_val < bestBIC) {
                     bestBIC = bic_val;

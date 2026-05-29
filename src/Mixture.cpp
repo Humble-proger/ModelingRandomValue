@@ -6,17 +6,18 @@
 
 namespace ModelingRandomValue::Distribution
 {
+    using namespace std;
 
     Mixture::Mixture(const std::vector<double> &weights,
                      const std::vector<UniversalDistribution> &comps)
         : _weights(weights), _components(comps)
     {
         if (_weights.size() != _components.size())
-            throw std::invalid_argument("weights and components size mismatch");
+            throw invalid_argument("weights and components size mismatch");
         // NOTE: Проверяем условие суммы весов
         double sum = std::accumulate(_weights.begin(), _weights.end(), 0.0);
-        if (std::fabs(sum - 1.0) > 1e-9)
-            throw std::invalid_argument("weights must sum to 1");
+        if (fabs(sum - 1.0) > 1e-9)
+            throw invalid_argument("weights must sum to 1");
         updateDiscrete();
     }
 
@@ -24,8 +25,8 @@ namespace ModelingRandomValue::Distribution
     {
         if (_weights.empty())
             return;
-        std::vector<double> probs(_weights.begin(), _weights.end());
-        _disc = std::discrete_distribution<int>(probs.begin(), probs.end());
+        vector<double> probs(_weights.begin(), _weights.end());
+        _disc = discrete_distribution<int>(probs.begin(), probs.end());
         _discValid = true;
     }
 
@@ -33,7 +34,7 @@ namespace ModelingRandomValue::Distribution
     {
         _components.push_back(comp);
         _weights.push_back(weight);
-        
+
         // NOTE: Не нормализируем веса, пользователь сам следит за условием
         _discValid = false;
     }
@@ -192,11 +193,13 @@ namespace ModelingRandomValue::Distribution
     }
 }
 
-namespace {
+namespace
+{
     using namespace ModelingRandomValue;
-    Interfaces::IDistribution* CreateMixture() {
+    Interfaces::IDistribution *CreateMixture()
+    {
         return new Distribution::Mixture();
     }
     const bool registeredMixture = Factories::DistributionFactory::instance()
-        ->registerDistribution("Mixture", CreateMixture);
+                                       ->registerDistribution("Mixture", CreateMixture);
 }

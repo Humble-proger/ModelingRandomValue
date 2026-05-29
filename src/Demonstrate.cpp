@@ -582,112 +582,146 @@ namespace ModelingRandomValue::Demonstrate
     {
         printHeader("9. УНИВЕРСАЛЬНЫЙ АППРОКСИМАТОР И МНОГОСЛОЙНЫЕ СМЕСИ");
 
-        // FIXME: Создаем локальный генератор
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        
-        // 1. Генерация выборок
-        // Смесь 2 нормальных: 0.7*N(-2,1) + 0.3*N(3,0.5)
-        DataSet sample1;
-        std::vector<std::pair<double, Distribution::NormalDistribution>> comps1 = {
-            {0.7, Distribution::NormalDistribution(-2.0, 1.0)},
-            {0.3, Distribution::NormalDistribution(3.0, 0.5)}};
-        std::discrete_distribution<int> disc1({0.7, 0.3});
+        // NOTE: 1. Истинные распределения как объекты Mixture
+        // 1.1 Смесь двух нормальных
+        vector<double> trueWeights1 = {0.6, 0.4};
+        vector<UniversalDistribution> trueComponents1 = {
+            UniversalDistribution(NormalDistribution(-3.0, 1.5)),
+            UniversalDistribution(NormalDistribution(4.0, 0.8))};
+        Mixture trueMixture1(trueWeights1, trueComponents1);
+
+        // NOTE: 1.2 Смесь с засорением (двухуровневая)
+        vector<double> normWeights = {1.0};
+        vector<UniversalDistribution> normComps = {
+            UniversalDistribution(NormalDistribution(2.0, 1.2))};
+        Mixture normalMix(normWeights, normComps);
+
+        vector<double> trueWeights2 = {0.15, 0.85};
+        vector<UniversalDistribution> trueComponents2 = {
+            UniversalDistribution(UniformDistribution(-5.0, 7.0)),
+            UniversalDistribution(normalMix)};
+        Mixture trueMixture2(trueWeights2, trueComponents2);
+
+        // NOTE: 1.3 UniformLogistic из варианта 13
+        vector<double> trueWeights3 = {1.0};
+        vector<UniversalDistribution> trueComponents3 = {
+            UniversalDistribution(UniformLogisticDistribution(2.0, 1.5, 2.0))};
+        Mixture trueMixture3(trueWeights3, trueComponents3);
+
+        // NOTE: 2. Генерация выборок через Mixture::random()
+        //    ВСЕ вызовы используют общий IDistribution::generator
+        DataSet sample1, sample2, sample3;
         for (int i = 0; i < 1000; ++i)
         {
-            int idx = disc1(gen);
-            sample1.add(comps1[idx].second.random());
+            sample1.add(trueMixture1.random());
+            sample2.add(trueMixture2.random());
+            sample3.add(trueMixture3.random());
         }
 
-        // Смесь нормальных + равномерное засорение: 0.8*N(0,1) + 0.2*Uniform(-4,4)
-        DataSet sample2;
-        std::uniform_real_distribution<double> unif(-4, 4);
-        Distribution::NormalDistribution norm(0, 1);
-        for (int i = 0; i < 1000; ++i)
-        {
-            if (rand() % 10 < 2)
-                sample2.add(unif(gen));
-            else
-                sample2.add(norm.random());
-        }
+        Mixture trueMixtures[] = {trueMixture1, trueMixture2, trueMixture3};
+        string trueNames[] = {"NormalMixture", "Contaminated", "UniformLogistic"};
 
-        // Распределение из варианта: логистическое Logistic(0,1)
-        DataSet sample3;
-        Distribution::LogisticDistribution logistic(0, 1);
-        for (int i = 0; i < 1000; ++i)
-            sample3.add(logistic.random());
-
-        // 2. Для каждой выборки строим гистограммы, статистики, аппроксиматоры
         for (int idx = 0; idx < 3; ++idx)
         {
             DataSet &data = (idx == 0) ? sample1 : (idx == 1) ? sample2
                                                               : sample3;
-            std::string name = (idx == 0) ? "NormalMixture" : (idx == 1) ? "Contaminated"
-                                                                         : "Logistic";
+            string name = trueNames[idx];
+            Mixture &trueMix = trueMixtures[idx];
 
             printSubHeader("Выборка " + name);
+
+            // NOTE: 3.2 Статистика и гистограмма
             printDataStatistic(data);
-            Observers::Histogram hist(data, 20);
-            printHistStatistic(hist);
+            Histogram hist(data, 20);
+            printHistStatistic(hist, true); // detail = true
             hist.saveToFile(name + "_hist");
 
-            // Неробастный аппроксиматор
+            // NOTE: 3.3 Построение неробастной смеси
             UniversalApproximator approxNonRobust(data, false);
             approxNonRobust.approximate();
-            auto &mixtureNonRobust = approxNonRobust.getModel();
-            printText("Неробастная смесь (нормальные компоненты):");
-            // Внешний итератор
-            Iterators::ShallowMixtureIterator itShallow(mixtureNonRobust);
+            Mixture &mixtureNonRobust = approxNonRobust.getModel();
+
+            // NOTE: 3.4 Вывод через итераторы
+            printText("Неробастная смесь (нормальные компоненты):", 0);
+            printText("Внешний итератор:", 0);
+            ShallowMixtureIterator itShallow(mixtureNonRobust);
             for (itShallow.first(); !itShallow.isDone(); itShallow.next())
             {
                 auto item = itShallow.currentItem();
-                std::cout << "  вес " << item.second << " : ";
-                item.first.save(std::cout);
-                std::cout << std::endl;
+                printValue("Вес", item.second);
+                cout << "  Распределение: ";
+                item.first.save(cout);
+                cout << endl;
             }
-            // Глубокий итератор (листья)
-            Iterators::DeepMixtureTraverser deepIt(mixtureNonRobust);
+
+            printText("Глубокий итератор (листья):", 0);
+            DeepMixtureTraverser deepIt(mixtureNonRobust);
             deepIt.traverse([](UniversalDistribution &d, double prob) -> bool
                             {
-            std::cout << "  лист с prob=" << prob << " : ";
-            d.save(std::cout);
-            std::cout << std::endl;
+            printValue("Лист с prob", prob);
+            cout << "  Распределение: ";
+            d.save(cout);
+            cout << endl;
             return true; });
 
-            // Сравнение характеристик
-            printValue("Теор. среднее (истинное)", (idx == 0 ? (-2 * 0.7 + 3 * 0.3) : (idx == 1 ? 0.0 : 0.0)), 2);
+            // NOTE: 3.5 Сравнение характеристик
+            printSubHeader("Сравнение характеристик");
+            printValue("Истинное среднее", trueMix.mean(), 2);
             printValue("Аппрокс. среднее", mixtureNonRobust.mean(), 2);
-            printValue("Теор. дисперсия", (idx == 0 ? (0.7 * (1 + 4) + 0.3 * (0.25 + 9) - (-0.5) * (-0.5)) : (idx == 1 ? 0.8 * 1 + 0.2 * 16 / 12 : M_PI * M_PI / 3)), 2);
+            printValue("Истинная дисперсия", trueMix.variance(), 2);
             printValue("Аппрокс. дисперсия", mixtureNonRobust.variance(), 2);
 
-            // Сохраняем плотности для графиков
-            AdditionalFunc::saveTheoreticalDensity(name + "_approx", mixtureNonRobust,
-                                                   {mixtureNonRobust.getLocation() - 3 * sqrt(mixtureNonRobust.variance()),
-                                                    mixtureNonRobust.getLocation() + 3 * sqrt(mixtureNonRobust.variance())},
-                                                   200);
-            AdditionalFunc::saveEmpiricalDensity(name + "_emp", data, hist);
+            // NOTE: 3.6 Сохранение плотностей для графиков
+            double minBound = mixtureNonRobust.getLocation() - 4 * sqrt(mixtureNonRobust.variance());
+            double maxBound = mixtureNonRobust.getLocation() + 4 * sqrt(mixtureNonRobust.variance());
 
-            // Робастный аппроксиматор (только для засорённой выборки)
+            saveTheoreticalDensity(name + "_true", trueMix, {minBound, maxBound}, 200);
+
+            for (size_t c = 0; c < trueMix.size(); ++c)
+            {
+                string compName = name + "_true_comp" + to_string(c);
+                saveComponentDensity(compName, trueMix.getComponent(c), {minBound, maxBound}, 200);
+            }
+
+            saveTheoreticalDensity(name + "_approx", mixtureNonRobust, {minBound, maxBound}, 200);
+
+            for (size_t c = 0; c < mixtureNonRobust.size(); ++c)
+            {
+                string compName = name + "_approx_comp" + to_string(c);
+                saveComponentDensity(compName, mixtureNonRobust.getComponent(c), {minBound, maxBound}, 200);
+            }
+
+            // NOTE: Эмпирическая плотность
+            saveEmpiricalDensity(name + "_emp", data, hist);
+
+            // NOTE: 3.6 Робастная смесь для засорённой выборки
             if (idx == 1)
             {
-                UniversalApproximator approxRobust(data, true);
+                UniversalApproximator approxRobust(data, true, 10);
                 approxRobust.approximate();
-                auto &mixtureRobust = approxRobust.getModel();
+                Mixture &mixtureRobust = approxRobust.getModel();
+
                 printText("Робастная смесь (равномерная + нормальные):");
-                Iterators::ShallowMixtureIterator itRobust(mixtureRobust);
+                ShallowMixtureIterator itRobust(mixtureRobust);
                 for (itRobust.first(); !itRobust.isDone(); itRobust.next())
                 {
                     auto item = itRobust.currentItem();
-                    std::cout << "  вес " << item.second << " : ";
-                    item.first.save(std::cout);
-                    std::cout << std::endl;
+                    printValue("Вес", item.second);
+                    cout << "  Распределение: ";
+                    item.first.save(cout);
+                    cout << endl;
                 }
+
                 printValue("Аппрокс. среднее (робаст)", mixtureRobust.mean(), 2);
                 printValue("Аппрокс. дисперсия (робаст)", mixtureRobust.variance(), 2);
-                AdditionalFunc::saveTheoreticalDensity(name + "_approx_robust", mixtureRobust,
-                                                       {mixtureRobust.getLocation() - 3 * sqrt(mixtureRobust.variance()),
-                                                        mixtureRobust.getLocation() + 3 * sqrt(mixtureRobust.variance())},
-                                                       200);
+
+                saveTheoreticalDensity(name + "_approx_robust", mixtureRobust, {minBound, maxBound}, 200);
+
+                for (size_t c = 0; c < mixtureRobust.size(); ++c)
+                {
+                    string compName = name + "_approx_robust_comp" + to_string(c);
+                    saveComponentDensity(compName, mixtureRobust.getComponent(c), {minBound, maxBound}, 200);
+                }
             }
             printSeparator();
         }

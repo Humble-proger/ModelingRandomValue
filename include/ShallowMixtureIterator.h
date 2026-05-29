@@ -1,6 +1,6 @@
 #pragma once
 #include "Mixture.h"
-#include <functional>
+#include "UniversalDistribution.h"
 
 namespace ModelingRandomValue::Iterators
 {
