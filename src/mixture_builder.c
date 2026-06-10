@@ -3,6 +3,7 @@
 #include <math.h>
 #include <float.h>
 #include <string.h>
+#include <time.h>
 
 // NOTE: Вспомогательные функции
 
@@ -17,21 +18,42 @@ static double uniform_pdf(double x, double a, double b) {
     return (x >= a && x <= b) ? 1.0 / (b - a) : 0.0;
 }
 
+/// @brief Моделирование равномерного закона
+static double uniform_rand(double min, double max) {
+    return min + (max - min) * (rand() / (RAND_MAX + 1.0));
+}
+
+/// @brief Рандомные веса
+/// @note Генерируем рандомное положительное значение и нормируем под условие
+static void random_weights(double* w, int k) {
+    double sum = 0.0;
+    for (int i = 0; i < k; ++i) {
+        w[i] = uniform_rand(0.0, 1.0);
+        sum += w[i];
+    }
+    for (int i = 0; i < k; ++i) w[i] /= sum;
+}
+
+/// @brief Рандомные веса для робастного случая
+/// @note Генерируем рандомное положительное значение и нормируем под условие
+static void random_weights_robust(double* w, int k, double* uniformWeight) {
+    *uniformWeight = uniform_rand(0.05, 0.5);
+    double sum = 0.0;
+    for (int i = 0; i < k; ++i) {
+        w[i] = uniform_rand(0.0, 1.0);
+        sum += w[i];
+    }
+    for (int i = 0; i < k; ++i) w[i] /= sum;
+    for (int i = 0; i < k; ++i) w[i] *= (1.0 - *uniformWeight);
+}
+
 /// @brief EM-алгоритм для обычной смеси нормальных (k компонент)
 static int em_normal_mixture(const double* data, int n, int k,
                              double* weights, double* means, double* stddevs,
                              double* logLik) {
-    // NOTE: Инициализация (случайная)
     int i, j, iter;
     double* gamma = (double*)malloc(n * k * sizeof(double));
     if (!gamma) return -1;
-
-    // NOTE: Простая инициализация: k-средних или случайные центры
-    for (j = 0; j < k; ++j) {
-        means[j] = data[rand() % n];
-        stddevs[j] = 1.0;
-        weights[j] = 1.0 / k;
-    }
 
     double prevLL = -1e100;
     // NOTE: Ограничиваем количество итераций алгоритма до 200
@@ -93,28 +115,15 @@ static int em_robust_mixture(const double* data, int n, int k,
     }
     double range = max - min;
     if (range < 1e-10) range = 1.0;
-    if (min == max) {
-        min -= 0.5;
-        max += 0.5;
-        range = max - min;
-    }
 
     // NOTE: Количество компонент: k нормальных + 1 равномерная
     int total_comps = k + 1;
     double* gamma = (double*)malloc(n * total_comps * sizeof(double));
     if (!gamma) return -1;
 
-    // NOTE: инициализация нормальных компонент (случайно)
-    for (int j = 0; j < k; ++j) {
-        means[j] = data[rand() % n];
-        stddevs[j] = 1.0;
-        weights[j] = 0.9 / k;
-    }
-    *uniformWeight = 0.1;
-
     double prevLL = -1e100;
     // NOTE: Ограничиваем количество итераций алгоритма до 200
-    for (int iter = 0; iter < 500; ++iter) {
+    for (int iter = 0; iter < 200; ++iter) {
         // NOTE: E-step вычисляется аналогично смеси нормальным, 
         // только с добавленной равномерной компонентой
         double totalLL = 0.0;
@@ -188,9 +197,108 @@ static double bic(double logLik, int n, int params) {
     return -2.0 * logLik + params * log(n);
 }
 
+/// @brief Обертка для множественных запусков обычной смеси
+static int em_normal_mixture_with_tries(const double* data, int n, int k,
+                                        double* best_weights, double* best_means, double* best_stddevs,
+                                        double* best_logLik, int tries) {
+    double best_ll = -1e300;
+    int success = 0;
+    double minVal = data[0], maxVal = data[0];
+    double sum = 0.0;
+    for (int i = 0; i < n; ++i) {
+        if (data[i] < minVal) minVal = data[i];
+        if (data[i] > maxVal) maxVal = data[i];
+        sum += data[i];
+    }
+    double mean = sum / n;
+    double empVar = 0.0;
+    for (int i = 0; i < n; ++i) {
+        double dev = data[i] - mean;
+        empVar += dev * dev;
+    }
+    empVar /= (n - 1);
+    if (empVar < 1e-6) empVar = 1.0;
+    double maxVar = empVar * 2.0;  // NOTE: Удваеваем эмпирическую дисперсию
+    double minVar = 1e-6; // NOTE: минимально возможная дисперсия
+    if (maxVar < minVar) maxVar = minVar * 10.0;
+
+    for (int t = 0; t < tries; ++t) {
+        // NOTE: Инициализация
+        double weights[k], means[k], stddevs[k];
+        for (int j = 0; j < k; ++j) {
+            means[j] = uniform_rand(minVal, maxVal);
+            stddevs[j] = sqrt(uniform_rand(minVar, maxVar));
+        }
+        random_weights(weights, k);
+        // NOTE: Сравниваем и сохраняем лучший результат
+        double logLik;
+        int err = em_normal_mixture(data, n, k, weights, means, stddevs, &logLik);
+        if (err == 0 && logLik > best_ll) {
+            best_ll = logLik;
+            memcpy(best_weights, weights, k * sizeof(double));
+            memcpy(best_means, means, k * sizeof(double));
+            memcpy(best_stddevs, stddevs, k * sizeof(double));
+            success = 1;
+        }
+    }
+    if (success) *best_logLik = best_ll;
+    return success ? 0 : -1;
+}
+
+/// @brief Обертка для множественных запусков робастной смеси
+static int em_robust_mixture_with_tries(const double* data, int n, int k,
+                                        double* best_weights, double* best_means, double* best_stddevs,
+                                        double* best_uniformWeight, double* best_logLik, int tries) {
+    double best_ll = -1e300;
+    int success = 0;
+    double minVal = data[0], maxVal = data[0];
+    double sum = 0.0;
+    for (int i = 0; i < n; ++i) {
+        if (data[i] < minVal) minVal = data[i];
+        if (data[i] > maxVal) maxVal = data[i];
+        sum += data[i];
+    }
+    double mean = sum / n;
+    double empVar = 0.0;
+    for (int i = 0; i < n; ++i) {
+        double dev = data[i] - mean;
+        empVar += dev * dev;
+    }
+    empVar /= (n - 1);
+    if (empVar < 1e-6) empVar = 1.0;
+    double maxVar = empVar * 2.0;  // NOTE: Удваеваем эмпирическую дисперсию
+    double minVar = 1e-6; // NOTE: минимально возможная дисперсия
+    if (maxVar < minVar) maxVar = minVar * 10.0;
+
+    for (int t = 0; t < tries; ++t) {
+        // NOTE: Инициализация
+        double weights[k], means[k], stddevs[k], uniformWeight;
+        for (int j = 0; j < k; ++j) {
+            means[j] = uniform_rand(minVal, maxVal);
+            stddevs[j] = sqrt(uniform_rand(minVar, maxVar));
+        }
+        random_weights_robust(weights, k, &uniformWeight);
+        // NOTE: Сравниваем и сохраняем лучший результат
+        double logLik;
+        int err = em_robust_mixture(data, n, k, weights, means, stddevs, &uniformWeight, &logLik);
+        if (err == 0 && logLik > best_ll) {
+            best_ll = logLik;
+            memcpy(best_weights, weights, k * sizeof(double));
+            memcpy(best_means, means, k * sizeof(double));
+            memcpy(best_stddevs, stddevs, k * sizeof(double));
+            *best_uniformWeight = uniformWeight;
+            success = 1;
+        }
+    }
+    if (success) *best_logLik = best_ll;
+    return success ? 0 : -1;
+}
+
 /// @brief Основная функция построения смеси с выбором числа компонент
-int buildMixture(const double* data, int n, int maxK, int robust, MixtureParams* params) {
+int buildMixture(const double* data, int n, int maxK, int robust, int numTries, MixtureParams* params) {
     if (n < 2 || maxK < 1) return -1;
+    srand((unsigned)time(NULL));
+
     int bestK = 1;
     double bestBIC = 1e100;
     double* bestWeights = NULL;
@@ -211,7 +319,7 @@ int buildMixture(const double* data, int n, int maxK, int robust, MixtureParams*
         int err;
         if (robust) {
             double unifWeight;
-            err = em_robust_mixture(data, n, k, weights, means, stddevs, &unifWeight, &logLik);
+            err = em_robust_mixture_with_tries(data, n, k, weights, means, stddevs, &unifWeight, &logLik, numTries);
             if (err == 0) {
                 // NOTE: число параметров: для k нормальных: 3k (веса, средние, сигмы) минус 1 связь весов (сумма=1) + 1 вес равномерной = 3k
                 int nParams = 3 * k;
@@ -231,7 +339,7 @@ int buildMixture(const double* data, int n, int maxK, int robust, MixtureParams*
                 }
             }
         } else {
-            err = em_normal_mixture(data, n, k, weights, means, stddevs, &logLik);
+            err = em_normal_mixture_with_tries(data, n, k, weights, means, stddevs, &logLik, numTries);
             if (err == 0) {
                 // NOTE: k весов (сумма=1) + k средних + k дисперсий
                 int nParams = 3 * k - 1;
@@ -261,6 +369,7 @@ int buildMixture(const double* data, int n, int maxK, int robust, MixtureParams*
     params->means = bestMeans;
     params->stddevs = bestStddevs;
     params->uniformWeight = robust ? bestUnifWeight : 0.0;
+    params->bic = bestBIC;
     return 0;
 }
 

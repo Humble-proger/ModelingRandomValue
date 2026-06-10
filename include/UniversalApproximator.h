@@ -19,9 +19,11 @@ private:
     std::unique_ptr<Distribution::Mixture> _model;
     bool _isBatchObserver;
     int _maxK;
+    int _numTries;
+    double _bic;
 
 public:
-    UniversalApproximator(Data::DataSet& ds, bool robust = false, int maxK = 5);
+    UniversalApproximator(Data::DataSet& ds, bool robust = false, int maxK = 5, int numTries = 10);
     ~UniversalApproximator();
 
     // NOTE: Запрет копирования
@@ -38,6 +40,21 @@ public:
     }
 
     int getMaxK() const { return _maxK; }
+
+    void setNumTries(int numTries) 
+    {
+        if (numTries < 1) 
+        {
+            throw std::invalid_argument("numTries must be >= 1");
+        }
+
+        _numTries = numTries;
+        approximate();
+    }
+
+    int getNumTries() const { return _numTries; }
+
+    double getBIC() const { return _bic; }
     
     /// @brief Построить модель по текущим данным (вызывается из update() и пользователем)
     void approximate();
