@@ -608,7 +608,7 @@ namespace ModelingRandomValue::Demonstrate
             UniversalDistribution(UniformLogisticDistribution(2.0, 1.5, 2.0))};
         Mixture trueMixture3(trueWeights3, trueComponents3);
 
-        // 1.4 Многослойная смесь (двухуровневая, 4 нормальных листа)
+        // NOTE: 1.4 Многослойная смесь (двухуровневая, 4 нормальных листа)
         vector<double> innerWeightsA = {0.5, 0.5};
         vector<UniversalDistribution> innerCompsA = {
             UniversalDistribution(NormalDistribution(-4.0, 1.0)),
@@ -627,21 +627,30 @@ namespace ModelingRandomValue::Demonstrate
             UniversalDistribution(innerMixB)};
         Mixture trueMixture4(topWeights, topComps);
 
+        // NOTE: 1.5 Зашумлённая иерархическая смесь (п. 3.1.2)
+        vector<double> noisyWeights = {0.85, 0.15};
+        vector<UniversalDistribution> noisyComps = {
+            UniversalDistribution(trueMixture4),
+            UniversalDistribution(UniformDistribution(1.0, 16.0))
+        };
+        Mixture trueMixture5(noisyWeights, noisyComps);
+
         // NOTE: 2. Генерация выборок через Mixture::random()
         //    ВСЕ вызовы используют общий IDistribution::generator
-        DataSet samples[4];
+        DataSet samples[5];
         for (int i = 0; i < 1000; ++i)
         {
             samples[0].add(trueMixture1.random());
             samples[1].add(trueMixture2.random());
             samples[2].add(trueMixture3.random());
             samples[3].add(trueMixture4.random());
+            samples[4].add(trueMixture5.random());
         }
 
-        Mixture trueMixtures[] = {trueMixture1, trueMixture2, trueMixture3, trueMixture4};
-        string trueNames[] = {"NormalMixture", "Contaminated", "UniformLogistic", "HierarchicalMixture"};
+        Mixture trueMixtures[] = {trueMixture1, trueMixture2, trueMixture3, trueMixture4, trueMixture5};
+        string trueNames[] = {"NormalMixture", "Contaminated", "UniformLogistic", "HierarchicalMixture", "NoisyHierarchicalMixture"};
 
-        for (int idx = 0; idx < 4; ++idx)
+        for (int idx = 0; idx < 5; ++idx)
         {
             DataSet &data = samples[idx];
             string name = trueNames[idx];
