@@ -12,6 +12,7 @@ typedef struct {
     double* stddevs; // стандартные отклонения (k)
     // Для робастного варианта дополнительно возвращается вес равномерной компоненты
     double uniformWeight;
+    double bic; // Информационный критерий BIC выбранной модели
 } MixtureParams;
 
 /// @brief Функция построения смеси.
@@ -19,9 +20,10 @@ typedef struct {
 /// @param n количество наблюдений
 /// @param maxK максимальное число компонент для перебора
 /// @param robust 0 = обычная смесь нормальных, 1 = робастная (нормальные + равномерная)
+/// @param numTries  количество случайных начальных приближений для каждого k
 /// @param params выходная структура (память выделяется внутри, нужно освободить через freeMixtureParams)
 /// @return 0 при успехе, иначе код ошибки
-int buildMixture(const double* data, int n, int maxK, int robust, MixtureParams* params);
+int buildMixture(const double* data, int n, int maxK, int robust, int numTries, MixtureParams* params);
 
 /// @brief Освобождение памяти, выделенной в MixtureParams
 void freeMixtureParams(MixtureParams* params);

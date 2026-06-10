@@ -15,12 +15,13 @@ namespace ModelingRandomValue::Approximation
     using Distribution::UniversalDistribution;
     using namespace std;
 
-    UniversalApproximator::UniversalApproximator(Data::DataSet &ds, bool robust, int maxK)
-        : _dataSet(ds), _robust(robust), _isBatchObserver(true)
+    UniversalApproximator::UniversalApproximator(Data::DataSet &ds, bool robust, int maxK, int numTries)
+        : _dataSet(ds), _robust(robust), _isBatchObserver(true), _bic(1e300)
     {
         _dataSet.attach(this, true);
         srand(static_cast<unsigned>(time(nullptr)));
         setMaxK(maxK);
+        setNumTries(numTries);
     }
 
     UniversalApproximator::~UniversalApproximator()
@@ -35,16 +36,19 @@ namespace ModelingRandomValue::Approximation
         if (n < 2)
         {
             _model = make_unique<Mixture>();
+            _bic = 1e300;
             return;
         }
 
         MixtureParams params;
-        int result = buildMixture(data.data(), n, _maxK, _robust ? 1 : 0, &params);
+        int result = buildMixture(data.data(), n, _maxK, _robust ? 1 : 0, _numTries, &params);
         if (result != 0)
         {
             _model = make_unique<Mixture>();
+            _bic = 1e300;
             return;
         }
+        _bic = params.bic;
 
         if (!_robust)
         {
@@ -65,7 +69,7 @@ namespace ModelingRandomValue::Approximation
             double normalWeight = 1.0 - unifWeight;
 
             // NOTE: Проверка на корректность
-            if (normalWeight < 1e-10)
+            if (normalWeight < 1e-10 || params.k == 0)
             {
                 // NOTE: Все наблюдения — выбросы, создаём только равномерную
                 double minVal = *min_element(data.begin(), data.end());

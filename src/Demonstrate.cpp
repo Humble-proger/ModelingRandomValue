@@ -608,23 +608,42 @@ namespace ModelingRandomValue::Demonstrate
             UniversalDistribution(UniformLogisticDistribution(2.0, 1.5, 2.0))};
         Mixture trueMixture3(trueWeights3, trueComponents3);
 
+        // 1.4 Многослойная смесь (двухуровневая, 4 нормальных листа)
+        vector<double> innerWeightsA = {0.5, 0.5};
+        vector<UniversalDistribution> innerCompsA = {
+            UniversalDistribution(NormalDistribution(-4.0, 1.0)),
+            UniversalDistribution(NormalDistribution(0.0, 1.0))};
+        Mixture innerMixA(innerWeightsA, innerCompsA);
+
+        vector<double> innerWeightsB = {0.7, 0.3};
+        vector<UniversalDistribution> innerCompsB = {
+            UniversalDistribution(NormalDistribution(3.0, 0.8)),
+            UniversalDistribution(NormalDistribution(6.0, 1.2))};
+        Mixture innerMixB(innerWeightsB, innerCompsB);
+
+        vector<double> topWeights = {0.6, 0.4};
+        vector<UniversalDistribution> topComps = {
+            UniversalDistribution(innerMixA),
+            UniversalDistribution(innerMixB)};
+        Mixture trueMixture4(topWeights, topComps);
+
         // NOTE: 2. Генерация выборок через Mixture::random()
         //    ВСЕ вызовы используют общий IDistribution::generator
-        DataSet sample1, sample2, sample3;
+        DataSet samples[4];
         for (int i = 0; i < 1000; ++i)
         {
-            sample1.add(trueMixture1.random());
-            sample2.add(trueMixture2.random());
-            sample3.add(trueMixture3.random());
+            samples[0].add(trueMixture1.random());
+            samples[1].add(trueMixture2.random());
+            samples[2].add(trueMixture3.random());
+            samples[3].add(trueMixture4.random());
         }
 
-        Mixture trueMixtures[] = {trueMixture1, trueMixture2, trueMixture3};
-        string trueNames[] = {"NormalMixture", "Contaminated", "UniformLogistic"};
+        Mixture trueMixtures[] = {trueMixture1, trueMixture2, trueMixture3, trueMixture4};
+        string trueNames[] = {"NormalMixture", "Contaminated", "UniformLogistic", "HierarchicalMixture"};
 
-        for (int idx = 0; idx < 3; ++idx)
+        for (int idx = 0; idx < 4; ++idx)
         {
-            DataSet &data = (idx == 0) ? sample1 : (idx == 1) ? sample2
-                                                              : sample3;
+            DataSet &data = samples[idx];
             string name = trueNames[idx];
             Mixture &trueMix = trueMixtures[idx];
 
@@ -632,19 +651,24 @@ namespace ModelingRandomValue::Demonstrate
 
             // NOTE: 3.2 Статистика и гистограмма
             printDataStatistic(data);
+
+            printSubHeader("Эмпирические характеристики выборки");
+            printValue("Среднее", data.mean(), 2);
+            printValue("Дисперсия", data.variance(), 2);
+            printValue("Асимметрия", data.skewness(), 2);
+            printValue("Эксцесс", data.kurtosis(), 2);
+
             Histogram hist(data, 20);
             printHistStatistic(hist, true); // detail = true
             hist.saveToFile(name + "_hist");
 
             // NOTE: 3.3 Построение неробастной смеси
-            UniversalApproximator approxNonRobust(data, false);
+            UniversalApproximator approxNonRobust(data, false, 8, 10); // maxK=8, tries=10
             approxNonRobust.approximate();
-            Mixture &mixtureNonRobust = approxNonRobust.getModel();
-
-            // NOTE: 3.4 Вывод через итераторы
-            printText("Неробастная смесь (нормальные компоненты):", 0);
+            Mixture &mixNonRobust = approxNonRobust.getModel();
+            printText("Неробастная модель (BIC = " + to_string(approxNonRobust.getBIC()) + "):");
             printText("Внешний итератор:", 0);
-            ShallowMixtureIterator itShallow(mixtureNonRobust);
+            ShallowMixtureIterator itShallow(mixNonRobust);
             for (itShallow.first(); !itShallow.isDone(); itShallow.next())
             {
                 auto item = itShallow.currentItem();
@@ -653,27 +677,59 @@ namespace ModelingRandomValue::Demonstrate
                 item.first.save(cout);
                 cout << endl;
             }
-
             printText("Глубокий итератор (листья):", 0);
-            DeepMixtureTraverser deepIt(mixtureNonRobust);
+            DeepMixtureTraverser deepIt(mixNonRobust);
             deepIt.traverse([](UniversalDistribution &d, double prob) -> bool
                             {
-            printValue("Лист с prob", prob);
-            cout << "  Распределение: ";
-            d.save(cout);
-            cout << endl;
-            return true; });
+                printValue("Лист с prob", prob);
+                cout << "  Распределение: ";
+                d.save(cout);
+                cout << endl;
+                return true; });
+
+            // NOTE: 3.4 Построение робастной смеси
+            UniversalApproximator approxRobust(data, true, 8, 10);
+            approxRobust.approximate();
+            Mixture &mixRobust = approxRobust.getModel();
+            printText("Робастная модель (BIC = " + to_string(approxRobust.getBIC()) + "):");
+            printText("Внешний итератор:", 0);
+            ShallowMixtureIterator itRobust(mixRobust);
+            for (itRobust.first(); !itRobust.isDone(); itRobust.next())
+            {
+                auto item = itRobust.currentItem();
+                printValue("Вес", item.second);
+                cout << "  Распределение: ";
+                item.first.save(cout);
+                cout << endl;
+            }
+            printText("Глубокий итератор (листья):", 0);
+            DeepMixtureTraverser deepItR(mixRobust);
+            deepItR.traverse([](UniversalDistribution &d, double prob) -> bool
+                             {
+                printValue("Лист с prob", prob);
+                cout << "  Распределение: ";
+                d.save(cout);
+                cout << endl;
+                return true; });
 
             // NOTE: 3.5 Сравнение характеристик
             printSubHeader("Сравнение характеристик");
             printValue("Истинное среднее", trueMix.mean(), 2);
-            printValue("Аппрокс. среднее", mixtureNonRobust.mean(), 2);
+            printValue("Неробастное среднее", mixNonRobust.mean(), 2);
+            printValue("Робастное среднее", mixRobust.mean(), 2);
             printValue("Истинная дисперсия", trueMix.variance(), 2);
-            printValue("Аппрокс. дисперсия", mixtureNonRobust.variance(), 2);
+            printValue("Неробастная дисперсия", mixNonRobust.variance(), 2);
+            printValue("Робастная дисперсия", mixRobust.variance(), 2);
+            printValue("Истинная асимметрия", trueMix.skewness(), 2);
+            printValue("Неробастная асимметрия", mixNonRobust.skewness(), 2);
+            printValue("Робастная асимметрия", mixRobust.skewness(), 2);
+            printValue("Истинный эксцесс", trueMix.kurtosis(), 2);
+            printValue("Неробастный эксцесс", mixNonRobust.kurtosis(), 2);
+            printValue("Робастный эксцесс", mixRobust.kurtosis(), 2);
 
             // NOTE: 3.6 Сохранение плотностей для графиков
-            double minBound = mixtureNonRobust.getLocation() - 4 * sqrt(mixtureNonRobust.variance());
-            double maxBound = mixtureNonRobust.getLocation() + 4 * sqrt(mixtureNonRobust.variance());
+            double minBound = trueMix.getLocation() - 4 * sqrt(trueMix.variance());
+            double maxBound = trueMix.getLocation() + 4 * sqrt(trueMix.variance());
 
             saveTheoreticalDensity(name + "_true", trueMix, {minBound, maxBound}, 200);
 
@@ -683,46 +739,22 @@ namespace ModelingRandomValue::Demonstrate
                 saveComponentDensity(compName, trueMix.getComponent(c), {minBound, maxBound}, 200);
             }
 
-            saveTheoreticalDensity(name + "_approx", mixtureNonRobust, {minBound, maxBound}, 200);
+            saveTheoreticalDensity(name + "_approx", mixNonRobust, {minBound, maxBound}, 200);
 
-            for (size_t c = 0; c < mixtureNonRobust.size(); ++c)
+            for (size_t c = 0; c < mixNonRobust.size(); ++c)
             {
                 string compName = name + "_approx_comp" + to_string(c);
-                saveComponentDensity(compName, mixtureNonRobust.getComponent(c), {minBound, maxBound}, 200);
+                saveComponentDensity(compName, mixNonRobust.getComponent(c), {minBound, maxBound}, 200);
+            }
+            saveTheoreticalDensity(name + "_approx_robust", mixRobust, {minBound, maxBound}, 200);
+            for (size_t c = 0; c < mixRobust.size(); ++c)
+            {
+                saveComponentDensity(name + "_approx_robust_comp" + to_string(c), mixRobust.getComponent(c), {minBound, maxBound}, 200);
             }
 
             // NOTE: Эмпирическая плотность
             saveEmpiricalDensity(name + "_emp", data, hist);
 
-            // NOTE: 3.6 Робастная смесь для засорённой выборки
-            if (idx == 1)
-            {
-                UniversalApproximator approxRobust(data, true, 10);
-                approxRobust.approximate();
-                Mixture &mixtureRobust = approxRobust.getModel();
-
-                printText("Робастная смесь (равномерная + нормальные):");
-                ShallowMixtureIterator itRobust(mixtureRobust);
-                for (itRobust.first(); !itRobust.isDone(); itRobust.next())
-                {
-                    auto item = itRobust.currentItem();
-                    printValue("Вес", item.second);
-                    cout << "  Распределение: ";
-                    item.first.save(cout);
-                    cout << endl;
-                }
-
-                printValue("Аппрокс. среднее (робаст)", mixtureRobust.mean(), 2);
-                printValue("Аппрокс. дисперсия (робаст)", mixtureRobust.variance(), 2);
-
-                saveTheoreticalDensity(name + "_approx_robust", mixtureRobust, {minBound, maxBound}, 200);
-
-                for (size_t c = 0; c < mixtureRobust.size(); ++c)
-                {
-                    string compName = name + "_approx_robust_comp" + to_string(c);
-                    saveComponentDensity(compName, mixtureRobust.getComponent(c), {minBound, maxBound}, 200);
-                }
-            }
             printSeparator();
         }
     }
